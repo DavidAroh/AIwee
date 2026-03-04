@@ -1,0 +1,8 @@
+{
+  "name": "AiWee",
+  "description": "Civic incident reporting & verification platform for Port Harcourt, Rivers State.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}
