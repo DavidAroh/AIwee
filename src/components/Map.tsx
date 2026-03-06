@@ -81,23 +81,23 @@ const TYPE_COLORS: Record<string, { primary: string; glow: string }> = {
 };
 
 // ── Marker factory (no inline @keyframes — uses global CSS above) ─────────────
-function createMarkerIcon(type: string, verified: boolean, severity: number, isLive: boolean) {
+function createMarkerIcon(type: string, severity: number, isLive: boolean) {
   const { primary, glow } = TYPE_COLORS[type] ?? TYPE_COLORS.Other;
   const isUrgent = severity >= 8;
   const isMedium = severity >= 5;
 
-  // Core dot size: urgent=14, medium=11, low=9
-  const core = isUrgent ? 14 : isMedium ? 11 : 9;
+  // Core dot size: BIG enough to always be visible (especially for live data)
+  const core = (isUrgent || isLive) ? 18 : isMedium ? 15 : 12;
 
-  // Container is core + ring clearance (ring animates to 2.4× core)
-  // We set it generously but not outrageously
-  const container = core + 16; // e.g. urgent=30, medium=27, low=25
+  // Container is big enough to fit the core, ring clearance, AND the live label!
+  const containerWidth = 60;
+  const containerHeight = 60;
 
-  const showPulse = isUrgent || verified || isLive;
-  const pulseSpeed = isUrgent ? '1.0s' : '1.6s';
+  const showPulse = true; // Always show pulse for everything
+  const pulseSpeed = isUrgent ? '1.0s' : isLive ? '1.3s' : '1.8s';
 
-  // Offset so the ring is centred on the core (ring div = same size as container)
-  const ringInset = `${(container - core) / 2}px`;   // center the ring
+  // Offset to center the core perfectly in the 60x60 container
+  const ringInset = `${(containerWidth - core) / 2}px`;
 
   const pulseDiv = showPulse
     ? `<div style="
@@ -113,39 +113,42 @@ function createMarkerIcon(type: string, verified: boolean, severity: number, isL
   const liveLabel = isLive
     ? `<div style="
         position:absolute;
-        bottom:${container + 2}px;
+        top:0;
         left:50%;transform:translateX(-50%);
-        background:rgba(16,185,129,0.92);
+        background:rgba(16,185,129,0.95);
         color:#fff;
-        font:700 7px/1 Inter,sans-serif;
-        letter-spacing:.06em;
-        padding:2px 5px;
-        border-radius:3px;
+        font:800 8.5px/1 Inter,sans-serif;
+        letter-spacing:.08em;
+        padding:3px 6px;
+        border-radius:4px;
         white-space:nowrap;
         pointer-events:none;
+        box-shadow:0 1px 4px rgba(0,0,0,0.5);
+        z-index: 10;
       ">LIVE</div>`
     : '';
 
   return new L.DivIcon({
     className: '',
     html: `
-      <div style="position:relative;width:${container}px;height:${container}px;">
+      <div style="position:relative;width:${containerWidth}px;height:${containerHeight}px;">
         ${pulseDiv}
-        ${liveLabel}
         <div style="
           position:absolute;
-          top:${(container - core) / 2}px;
-          left:${(container - core) / 2}px;
+          top:${(containerHeight - core) / 2}px;
+          left:${(containerWidth - core) / 2}px;
           width:${core}px;height:${core}px;
           border-radius:50%;
           background:${primary};
-          border:${isUrgent ? '2.5px' : '2px'} solid rgba(255,255,255,${isUrgent ? 0.95 : 0.8});
-          box-shadow:0 0 ${isUrgent ? 10 : 6}px ${glow},0 1px 4px rgba(0,0,0,0.6);
+          border:${isUrgent ? '2.5px' : '2.5px'} solid rgba(255,255,255,${isUrgent ? 0.95 : 0.85});
+          box-shadow:0 0 ${isUrgent ? 12 : 8}px ${glow},0 2px 6px rgba(0,0,0,0.7);
+          z-index: 5;
         "></div>
+        ${liveLabel}
       </div>`,
-    iconSize:   [container, container],
-    iconAnchor: [container / 2, container / 2],
-    popupAnchor:[0, -(container / 2 + 4)],
+    iconSize:   [containerWidth, containerHeight],
+    iconAnchor: [containerWidth / 2, containerHeight / 2],
+    popupAnchor:[0, -(containerHeight / 2 - 8)],
   });
 }
 
@@ -287,7 +290,38 @@ function buildPopup(inc: ReturnType<typeof useIncidentStore.getState>['incidents
     </div>`;
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Incident Markers with Zoom-on-Click ───────────────────────────────────────
+function IncidentMarkers({ active }: { active: ReturnType<typeof useIncidentStore.getState>['incidents'] }) {
+  const map = useMap();
+  return (
+    <>
+      {active.map((incident) => (
+        <Marker
+          key={incident.id}
+          position={[incident.latitude, incident.longitude]}
+          icon={createMarkerIcon(
+            incident.type,
+            incident.severityScore,
+            (incident as any).source === 'live',
+          )}
+          zIndexOffset={incident.severityScore * 100}
+          eventHandlers={{
+            click: () => {
+              // Zoom in gently on click to get a clearer view
+              map.setView([incident.latitude, incident.longitude], 16, { animate: true });
+            }
+          }}
+        >
+          <Popup className="aiwee-popup" maxWidth={240}>
+            <div dangerouslySetInnerHTML={{ __html: buildPopup(incident) }} />
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
+}
+
+// ── MapView Entry Point ────────────────────────────────────────────────────────────
 interface MapViewProps {
   center?:       [number, number];
   zoom?:         number;
@@ -342,23 +376,7 @@ export default function MapView({
         )}
 
         {/* Incident markers */}
-        {active.map((incident) => (
-          <Marker
-            key={incident.id}
-            position={[incident.latitude, incident.longitude]}
-            icon={createMarkerIcon(
-              incident.type,
-              incident.status === 'VERIFIED',
-              incident.severityScore,
-              (incident as any).source === 'live',
-            )}
-            zIndexOffset={incident.severityScore * 100}
-          >
-            <Popup className="aiwee-popup" maxWidth={240}>
-              <div dangerouslySetInnerHTML={{ __html: buildPopup(incident) }} />
-            </Popup>
-          </Marker>
-        ))}
+        <IncidentMarkers active={active} />
       </MapContainer>
     </div>
   );

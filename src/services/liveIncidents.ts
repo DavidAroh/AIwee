@@ -1,14 +1,14 @@
 /**
- * Live Incident Service — powered by Google Gemini + Google Search grounding
+ * Live Incident Service — Dual-source: Google News RSS + Gemini Search grounding
  *
- * Uses gemini-2.0-flash with googleSearch grounding to find *real* recent
- * Port Harcourt public-safety news, then structures the results into typed
- * incident objects for the AiWee map and feed.
- *
- * Falls back to a curated PH incident pool when the API key is missing,
- * rate-limited, or the model returns no usable data.
+ * Pipeline:
+ *  1. Google News RSS (real PH headlines, no API key, via CORS proxy) — fastest
+ *  2. Gemini 2.0 Flash with googleSearch grounding — AI-structured incidents
+ *  Both run in PARALLEL; results are merged & deduplicated.
+ *  Falls back to curated PH pool only when BOTH sources fail.
  */
 import { GoogleGenAI, Type } from '@google/genai';
+import { fetchGoogleNewsIncidents } from './googleNewsRSS';
 
 // ── Client ─────────────────────────────────────────────────────────────────────
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
@@ -72,21 +72,37 @@ const PH_COORDS: Record<string, [number, number]> = {
 };
 
 function resolveCoords(locationName: string): [number, number] {
-  // Exact match first
-  if (PH_COORDS[locationName]) return PH_COORDS[locationName];
+  let baseLat = 4.8156;
+  let baseLng = 7.0498;
 
-  // Partial match
-  const lower = locationName.toLowerCase();
-  for (const [key, coords] of Object.entries(PH_COORDS)) {
-    if (lower.includes(key.toLowerCase()) || key.toLowerCase().includes(lower)) {
-      return coords;
+  // Exact match first
+  if (PH_COORDS[locationName]) {
+    [baseLat, baseLng] = PH_COORDS[locationName];
+  } else {
+    // Partial match
+    const lower = locationName.toLowerCase();
+    let found = false;
+    for (const [key, coords] of Object.entries(PH_COORDS)) {
+      if (lower.includes(key.toLowerCase()) || key.toLowerCase().includes(lower)) {
+        [baseLat, baseLng] = coords;
+        found = true;
+        break;
+      }
+    }
+    
+    // If not found, it keeps the default PH coords but with a larger jitter
+    if (!found) {
+      return [
+        baseLat + (Math.random() - 0.5) * 0.05,
+        baseLng + (Math.random() - 0.5) * 0.05,
+      ];
     }
   }
 
-  // Default: Port Harcourt centre with small random jitter
+  // ALWAYS apply a small jitter (~500m) to exact/partial matches so markers don't stack perfectly
   return [
-    4.8156 + (Math.random() - 0.5) * 0.05,
-    7.0498 + (Math.random() - 0.5) * 0.05,
+    baseLat + (Math.random() - 0.5) * 0.008,
+    baseLng + (Math.random() - 0.5) * 0.008,
   ];
 }
 
@@ -215,6 +231,16 @@ const INCIDENT_SCHEMA = {
   required: ['incidents'],
 };
 
+// ── Deduplication: same type within ~500m radius ──────────────────────────────
+function isDuplicate(candidate: LiveIncident, existing: LiveIncident[]): boolean {
+  return existing.some(
+    (e) =>
+      e.type === candidate.type &&
+      Math.abs(e.latitude  - candidate.latitude)  < 0.005 &&
+      Math.abs(e.longitude - candidate.longitude) < 0.005,
+  );
+}
+
 // ── Main fetch function ────────────────────────────────────────────────────────
 export async function fetchLivePortHarcourtIncidents(): Promise<LiveIncident[]> {
   const now = new Date().toISOString();
@@ -225,11 +251,16 @@ export async function fetchLivePortHarcourtIncidents(): Promise<LiveIncident[]> 
     timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit',
   }) + ' WAT';
 
-  try {
-    // ── Step 1: Use Google Search grounding to find real news ─────────────────
-    const searchResponse = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: `Search Google for the latest public safety incidents in Port Harcourt, Rivers State, Nigeria as of ${dateStr}.
+  // ── Run BOTH sources in parallel ─────────────────────────────────────────────
+  const [rssResult, geminiResult] = await Promise.allSettled([
+    // Source 1: Google News RSS — zero API key, real headlines
+    fetchGoogleNewsIncidents(),
+
+    // Source 2: Gemini + Google Search grounding — AI-structured incidents
+    (async (): Promise<LiveIncident[]> => {
+      const searchResponse = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: `Search Google for the latest public safety incidents in Port Harcourt, Rivers State, Nigeria as of ${dateStr}.
 
 Look for recent news about:
 - Road accidents, vehicle collisions on Port Harcourt roads (Aba Road, Peter Odili Road, Trans-Amadi, Eleme Junction, Rumuola Road)
@@ -240,23 +271,16 @@ Look for recent news about:
 - Environmental hazards (gas leaks, oil spills in Rivers State)
 
 Summarize what you find from real news sources. Include specific locations, severity, and times if available.`,
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
-    });
+        config: { tools: [{ googleSearch: {} }] },
+      });
 
-    const groundedText = searchResponse.text ?? '';
-    const groundingChunks = searchResponse.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-    const sourceSummary = groundingChunks
-      .slice(0, 5)
-      .map((c: any) => c.web?.title ?? '')
-      .filter(Boolean)
-      .join('; ');
+      const groundedText    = searchResponse.text ?? '';
+      const groundingChunks = searchResponse.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+      const sourceSummary   = groundingChunks.slice(0, 5).map((c: any) => c.web?.title ?? '').filter(Boolean).join('; ');
 
-    // ── Step 2: Structure the grounded content into typed incidents ────────────
-    const structureResponse = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: `You are the AiWee incident structuring engine for Port Harcourt, Rivers State, Nigeria.
+      const structureResponse = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: `You are the AiWee incident structuring engine for Port Harcourt, Rivers State, Nigeria.
 
 Based on this Google-grounded news summary:
 """
@@ -266,7 +290,7 @@ ${groundedText}
 News sources found: ${sourceSummary || 'none — use realistic Port Harcourt pattern data'}
 Current time: ${timeStr}, ${dateStr}
 
-Generate between 5 and 7 public safety incidents for the AiWee map. 
+Generate between 5 and 7 public safety incidents for the AiWee map.
 
 RULES:
 1. If real news was found, base incidents on it (high confidence 80–95)
@@ -282,62 +306,81 @@ D-Line (4.8197, 7.0153), Rumuola Road (4.8149, 7.0426), Rumuigbo Junction (4.829
 Woji Road (4.8392, 7.0254), Eleme Junction (4.7732, 7.0905), GRA Phase 1 (4.8103, 7.0073),
 Borokiri (4.7605, 7.0049), Eagle Island (4.7800, 6.9900), Peter Odili Road (4.8250, 7.0350),
 Aba Road (4.8100, 7.0300), Rumuokoro (4.8654, 7.0222)`,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: INCIDENT_SCHEMA,
-      },
-    });
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: INCIDENT_SCHEMA,
+        },
+      });
 
-    const parsed = JSON.parse(structureResponse.text ?? '{}') as { incidents: any[] };
+      const parsed = JSON.parse(structureResponse.text ?? '{}') as { incidents: any[] };
+      if (!Array.isArray(parsed.incidents) || parsed.incidents.length === 0) {
+        throw new Error('Gemini returned no incidents');
+      }
 
-    if (!Array.isArray(parsed.incidents) || parsed.incidents.length === 0) {
-      throw new Error('Gemini returned no incidents');
-    }
+      return parsed.incidents.slice(0, 8).map((item, i) => {
+        const [lat, lng] = resolveCoords(item.locationName ?? 'Port Harcourt');
+        return {
+          id:              `live-gemini-${Date.now()}-${i}`,
+          type:            (['Fire','Accident','Crime','Medical','Flood','Other'].includes(item.type) ? item.type : 'Other') as LiveIncident['type'],
+          description:     String(item.description ?? ''),
+          locationName:    String(item.locationName ?? 'Port Harcourt'),
+          latitude:        clampLat(lat),
+          longitude:       clampLng(lng),
+          severity:        Math.max(1, Math.min(10, Number(item.severity) || 5)),
+          summary:         String(item.summary ?? item.description ?? ''),
+          cues:            Array.isArray(item.cues) ? (item.cues as string[]).slice(0, 5) : [],
+          confidenceScore: Math.max(0, Math.min(100, Number(item.confidenceScore) || 70)),
+          corroboratingEvidence: groundingChunks
+            .slice(0, 3)
+            .map((c: any) => c.web?.title && c.web?.uri ? `${c.web.title} — ${c.web.uri}` : null)
+            .filter(Boolean) as string[],
+          source:    'live' as const,
+          timestamp: now,
+        };
+      });
+    })(),
+  ]);
 
-    // ── Step 3: Map to LiveIncident, resolving coordinates ────────────────────
-    return parsed.incidents.slice(0, 8).map((item, i) => {
-      const [lat, lng] = resolveCoords(item.locationName ?? 'Port Harcourt');
+  const rssIncidents    = rssResult.status    === 'fulfilled' ? rssResult.value    : [];
+  const geminiIncidents = geminiResult.status === 'fulfilled' ? geminiResult.value : [];
 
-      return {
-        id: `live-gemini-${Date.now()}-${i}`,
-        type: (['Fire','Accident','Crime','Medical','Flood','Other'].includes(item.type)
-          ? item.type : 'Other') as LiveIncident['type'],
-        description: String(item.description ?? ''),
-        locationName: String(item.locationName ?? 'Port Harcourt'),
-        latitude:  clampLat(lat),
-        longitude: clampLng(lng),
-        severity:  Math.max(1, Math.min(10, Number(item.severity) || 5)),
-        summary:   String(item.summary ?? item.description ?? ''),
-        cues:      Array.isArray(item.cues) ? (item.cues as string[]).slice(0, 5) : [],
-        confidenceScore: Math.max(0, Math.min(100, Number(item.confidenceScore) || 70)),
-        corroboratingEvidence: groundingChunks
-          .slice(0, 3)
-          .map((c: any) => c.web?.title && c.web?.uri ? `${c.web.title} — ${c.web.uri}` : null)
-          .filter(Boolean) as string[],
-        source: 'live' as const,
-        timestamp: now,
-      };
-    });
-
-  } catch (err: any) {
-    const isAuth  = err?.status === 403 || err?.message?.includes('API key') || err?.message?.includes('PERMISSION_DENIED');
-    const isQuota = err?.status === 429 || err?.message?.includes('quota') || err?.message?.includes('RESOURCE_EXHAUSTED');
-
-    if (isAuth) {
-      console.warn('[AiWee] Gemini API key not set or invalid — add VITE_GEMINI_API_KEY to .env');
-    } else if (isQuota) {
-      console.warn('[AiWee] Gemini rate limited — using curated Port Harcourt incident data');
-    } else {
-      console.error('[AiWee] Gemini live incidents error:', err?.message ?? err);
-    }
-
-    // Shuffle and return curated fallback
-    const shuffled = [...PH_FALLBACK].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 5).map((inc, i) => ({
-      ...inc,
-      id: `live-fallback-${Date.now()}-${i}`,
-      source: 'live' as const,
-      timestamp: now,
-    }));
+  if (rssResult.status    === 'rejected') console.info(`[AiWee/RSS] unavailable: ${(rssResult.reason as any)?.message ?? 'proxy error'}`);
+  if (geminiResult.status === 'rejected') {
+    const err = geminiResult.reason as any;
+    if (err?.status === 429 || err?.message?.includes('quota') || err?.message?.includes('RESOURCE_EXHAUSTED'))
+      console.info('[AiWee/Gemini] rate limited — RSS-only mode active');
+    else if (err?.status === 503 || err?.message?.includes('UNAVAILABLE'))
+      console.info('[AiWee/Gemini] temporarily unavailable — RSS-only mode active');
+    else if (err?.status === 403 || err?.message?.includes('key') || err?.message?.includes('PERMISSION_DENIED'))
+      console.warn('[AiWee/Gemini] API key invalid — add VITE_GEMINI_API_KEY to .env');
+    else
+      console.warn('[AiWee/Gemini]', err?.message ?? err);
   }
+
+  // ── Merge: RSS (real headlines) first, then fill with Gemini ─────────────────
+  const merged: LiveIncident[] = [];
+
+  for (const inc of rssIncidents) {
+    if (!isDuplicate(inc, merged)) merged.push(inc);
+  }
+  for (const inc of geminiIncidents) {
+    if (!isDuplicate(inc, merged)) merged.push(inc);
+  }
+
+  if (merged.length > 0) {
+    console.log(`[AiWee] ${merged.length} live incidents (${rssIncidents.length} RSS + ${geminiIncidents.length} Gemini)`);
+    return merged.slice(0, 10);
+  }
+
+  // ── Both failed — curated fallback ───────────────────────────────────────────
+  console.info('[AiWee] Both sources unavailable — using curated Port Harcourt data');
+  const shuffled = [...PH_FALLBACK].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 5).map((inc, i) => ({
+    ...inc,
+    id:        `live-fallback-${Date.now()}-${i}`,
+    source:    'live' as const,
+    timestamp: now,
+  }));
 }
+
+

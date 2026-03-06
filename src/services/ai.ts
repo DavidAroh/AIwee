@@ -31,24 +31,36 @@ export async function analyzeIncident(
   }
 
   // 1. Basic Analysis (Type, Severity, Cues, Confidence)
-  const analysisResponse = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: { parts },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          incidentType: { type: Type.STRING, description: "e.g., Accident, Fire, Crime, Medical, Other" },
-          severityScore: { type: Type.NUMBER, description: "Severity from 1 to 10" },
-          confidenceScore: { type: Type.NUMBER, description: "Confidence from 0 to 100 based on details provided" },
-          summary: { type: Type.STRING, description: "A short summary of the incident" },
-          cues: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Key extracted cues (e.g., 'spill detected', 'visible casualties')" },
+  let analysisResponse;
+  try {
+    analysisResponse = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: { parts },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            incidentType: { type: Type.STRING, description: "e.g., Accident, Fire, Crime, Medical, Other" },
+            severityScore: { type: Type.NUMBER, description: "Severity from 1 to 10" },
+            confidenceScore: { type: Type.NUMBER, description: "Confidence from 0 to 100 based on details provided" },
+            summary: { type: Type.STRING, description: "A short summary of the incident" },
+            cues: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Key extracted cues (e.g., 'spill detected', 'visible casualties')" },
+          },
+          required: ["incidentType", "severityScore", "confidenceScore", "summary", "cues"],
         },
-        required: ["incidentType", "severityScore", "confidenceScore", "summary", "cues"],
       },
-    },
-  });
+    });
+  } catch (err: any) {
+    console.error("AI Analysis failed (likely high demand). Returning fallback logic:", err);
+    return {
+      incidentType: "Other",
+      severityScore: 5,
+      confidenceScore: 40,
+      summary: `[Fallback] ${description.slice(0, 80)}...`,
+      cues: ["unverified", "user report"],
+    };
+  }
 
   let result: AIAnalysisResult;
   try {
@@ -66,7 +78,7 @@ export async function analyzeIncident(
   // 2. Search Grounding (Simulate Cloud Scraping for corroborating evidence)
   try {
     const searchResponse = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: `Search for recent news or social media reports about: ${result.summary} in Port Harcourt, Rivers State. Summarize any corroborating evidence found.`,
       config: {
         tools: [{ googleSearch: {} }],

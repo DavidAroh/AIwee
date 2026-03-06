@@ -70,80 +70,9 @@ interface IncidentStore {
 }
 
 // ── Seed data ─────────────────────────────────────────────────────────────────
-const initialIncidents: Incident[] = [
-  {
-    id: 'inc-1',
-    type: 'Medical',
-    description: 'Medical emergency at Diobu Area.',
-    latitude: 4.795, longitude: 6.990,
-    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    status: 'UNVERIFIED',
-    severityScore: 8,
-    confidenceScore: 67,
-    summary: 'Medical emergency reported in Diobu Area. Ambulance needed immediately.',
-    cues: ['Diobu Area', 'ambulance needed', 'urgent'],
-    reportersCount: 2,
-    source: 'citizen',
-    statusHistory: [{ status: 'UNVERIFIED', timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), note: 'First report' }],
-  },
-  {
-    id: 'inc-2',
-    type: 'Fire',
-    description: 'Fire outbreak at Diobu Market.',
-    latitude: 4.790, longitude: 6.985,
-    timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    status: 'VERIFIED',
-    severityScore: 9,
-    confidenceScore: 87,
-    summary: 'Major fire outbreak at Diobu Market. Multiple stalls affected, fire service responding.',
-    cues: ['Diobu Market', 'smoke', 'flames', 'market stalls'],
-    reportersCount: 12,
-    source: 'citizen',
-    statusHistory: [
-      { status: 'UNVERIFIED', timestamp: new Date(Date.now() - 1000 * 60 * 50).toISOString(), note: 'First report' },
-      { status: 'VERIFIED', timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), note: 'Crowd threshold reached (12 reports)' },
-    ],
-  },
-  {
-    id: 'inc-3',
-    type: 'Flood',
-    description: 'Severe flooding at Rumuigbo junction.',
-    latitude: 4.830, longitude: 6.990,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    status: 'VERIFIED',
-    severityScore: 7,
-    confidenceScore: 95,
-    summary: 'Flooding consistent with recent rainfall. 8 unique device reports in 500m radius within 15 min. Road impassable.',
-    cues: ['Rumuigbo Junction', 'water level rising', 'impassable road', 'drainage blocked'],
-    reportersCount: 8,
-    source: 'citizen',
-    statusHistory: [
-      { status: 'UNVERIFIED', timestamp: new Date(Date.now() - 1000 * 60 * 65).toISOString(), note: 'First report' },
-      { status: 'VERIFIED', timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), note: 'AI confidence high + crowd threshold' },
-    ],
-  },
-];
+const initialIncidents: Incident[] = [];
 
-const initialAlerts: Alert[] = [
-  {
-    id: 'alt-seed-1',
-    incidentId: 'inc-2',
-    type: 'URGENT',
-    message: '🔥 Major fire verified at Diobu Market. Avoid the area. Emergency services en route.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 44).toISOString(),
-    radiusKm: 3,
-    read: false,
-  },
-  {
-    id: 'alt-seed-2',
-    incidentId: 'inc-1',
-    type: 'VERIFICATION',
-    message: 'Incident reported nearby in Diobu Area. Can you confirm what you see?',
-    timestamp: new Date(Date.now() - 1000 * 60 * 14).toISOString(),
-    radiusKm: 2,
-    read: false,
-  },
-];
+const initialAlerts: Alert[] = [];
 
 function buildVerifyAlert(incident: Incident): Alert {
   return {
