@@ -22,17 +22,17 @@ export default function ControlRoom() {
   if (isMobile) return <Navigate to="/citizen" replace />;
 
   return (
-    <div className="min-h-screen bg-[#0B1121] text-slate-300 font-sans flex flex-col">
+    <div className="min-h-screen bg-white text-slate-700 font-sans flex flex-col">
       {/* Sub-nav tabs for Desktop Control Room */}
-      <div className="flex items-center gap-1 px-4 pt-1 pb-0 border-b border-white/5 bg-[#0B1121] z-50 relative">
+      <div className="flex items-center gap-1 px-4 pt-1 pb-0 border-b border-slate-200 bg-white z-50 relative">
         <NavLink
           to="/control"
           end
           className={({ isActive }) =>
             `flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
               isActive
-                ? 'text-emerald-400 border-emerald-500'
-                : 'text-slate-500 border-transparent hover:text-slate-300'
+                ? 'text-blue-500 border-blue-600'
+                : 'text-slate-500 border-transparent hover:text-slate-700'
             }`
           }
         >
@@ -44,7 +44,7 @@ export default function ControlRoom() {
             `flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
               isActive
                 ? 'text-indigo-400 border-indigo-500'
-                : 'text-slate-500 border-transparent hover:text-slate-300'
+                : 'text-slate-500 border-transparent hover:text-slate-700'
             }`
           }
         >

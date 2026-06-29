@@ -20,7 +20,7 @@ export function LiveBadge({ status, onRefresh, compact = false }: Props) {
     ? 'bg-amber-400'
     : isError
       ? 'bg-red-500'
-      : 'bg-emerald-500';
+      : 'bg-blue-600';
 
   const label = isFetching ? 'Fetching…' : isError ? 'Error' : 'LIVE';
 
@@ -40,7 +40,7 @@ export function LiveBadge({ status, onRefresh, compact = false }: Props) {
         </span>
         <span className={cn(
           'text-[10px] font-extrabold uppercase tracking-widest',
-          isFetching ? 'text-amber-400' : isError ? 'text-red-400' : 'text-emerald-400',
+          isFetching ? 'text-amber-400' : isError ? 'text-red-400' : 'text-blue-500',
         )}>
           {label}
         </span>
@@ -53,13 +53,13 @@ export function LiveBadge({ status, onRefresh, compact = false }: Props) {
       )}
 
       {!compact && !isFetching && (
-        <span className="text-[9px] text-slate-600 hidden sm:inline">
+        <span className="text-[9px] text-slate-500 hidden sm:inline">
           · {status.nextRefreshIn}s
         </span>
       )}
 
       {!compact && status.newCount > 0 && status.state === 'success' && (
-        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+        <span className="bg-blue-600/20 text-blue-500 border border-blue-600/30 text-[9px] font-bold px-1.5 py-0.5 rounded-full">
           +{status.newCount} new
         </span>
       )}
@@ -68,7 +68,7 @@ export function LiveBadge({ status, onRefresh, compact = false }: Props) {
         <button
           onClick={onRefresh}
           disabled={isFetching}
-          className="text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
+          className="text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-40"
           title="Refresh now"
         >
           <RefreshCw className={cn('w-3 h-3', isFetching && 'animate-spin')} />

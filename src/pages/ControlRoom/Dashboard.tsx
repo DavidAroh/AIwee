@@ -21,7 +21,7 @@ const TYPE_CFG: Record<string, { hex: string; bg: string; label: string }> = {
   Fire:     { hex: '#ef4444', bg: 'bg-red-500/15 text-red-400 border-red-500/30',     label: 'Fire'     },
   Accident: { hex: '#f59e0b', bg: 'bg-amber-500/15 text-amber-400 border-amber-500/30', label: 'Accident' },
   Crime:    { hex: '#ec4899', bg: 'bg-pink-500/15 text-pink-400 border-pink-500/30',   label: 'Crime'    },
-  Medical:  { hex: '#10b981', bg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', label: 'Medical' },
+  Medical:  { hex: '#2563eb', bg: 'bg-blue-600/15 text-blue-500 border-blue-600/30', label: 'Medical' },
   Flood:    { hex: '#06b6d4', bg: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',   label: 'Flood'    },
   Other:    { hex: '#8b5cf6', bg: 'bg-violet-500/15 text-violet-400 border-violet-500/30', label: 'Other' },
 };
@@ -36,8 +36,8 @@ const statusOf = (i: Incident) => {
 const STATUS_CFG = {
   Breaking:   { color: 'text-red-400',    dot: 'bg-red-500',     icon: Star        },
   Developing: { color: 'text-amber-400',  dot: 'bg-amber-500',   icon: GitBranch   },
-  Confirmed:  { color: 'text-emerald-400',dot: 'bg-emerald-500', icon: CheckCircle2},
-  Archived:   { color: 'text-slate-500',  dot: 'bg-slate-600',   icon: Archive     },
+  Confirmed:  { color: 'text-blue-500',dot: 'bg-blue-600', icon: CheckCircle2},
+  Archived:   { color: 'text-slate-500',  dot: 'bg-slate-500',   icon: Archive     },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,28 +62,28 @@ function DetailPanel({
     : ['AI Feed — Gemini analysis with Google Search grounding'];
 
   return (
-    <div className="w-[340px] shrink-0 flex flex-col bg-[#0c1220] border-l border-[#1e2d40] overflow-hidden animate-fade-in-left">
+    <div className="w-[340px] shrink-0 flex flex-col bg-[#ffffff] border-l border-[#e2e8f0] overflow-hidden animate-fade-in-left">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e2d40] shrink-0">
-        <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">Incident Detail</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e2e8f0] shrink-0">
+        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-widest">Incident Detail</span>
         <button
           onClick={onClose}
-          className="text-[10px] font-semibold text-slate-500 hover:text-slate-200 uppercase tracking-widest flex items-center gap-1 transition-colors"
+          className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 uppercase tracking-widest flex items-center gap-1 transition-colors"
         >
           <X className="w-3.5 h-3.5" /> Close
         </button>
       </div>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar text-[11px] text-slate-300">
+      <div className="flex-1 overflow-y-auto custom-scrollbar text-[11px] text-slate-700">
 
         {/* Type / Status / Priority badges */}
-        <div className="px-4 py-3 flex flex-wrap gap-1.5 border-b border-[#1e2d40]">
+        <div className="px-4 py-3 flex flex-wrap gap-1.5 border-b border-[#e2e8f0]">
           <span className={cn('px-2.5 py-1 rounded font-bold text-[10px] uppercase border', cfg.bg)}>
             ● {incident.type}
           </span>
           <span className={cn('px-2.5 py-1 rounded font-bold text-[10px] uppercase border', sCfg.color,
-            status === 'Confirmed' ? 'border-emerald-500/30 bg-emerald-500/10'
+            status === 'Confirmed' ? 'border-blue-600/30 bg-blue-600/10'
             : status === 'Breaking' ? 'border-red-500/30 bg-red-500/10'
             : 'border-amber-500/30 bg-amber-500/10'
           )}>
@@ -92,7 +92,7 @@ function DetailPanel({
           <span className={cn('px-2.5 py-1 rounded font-bold text-[10px] uppercase border',
             incident.severityScore >= 8 ? 'text-red-400 border-red-500/30 bg-red-500/10'
             : incident.severityScore >= 5 ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
-            : 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
+            : 'text-blue-500 border-blue-600/30 bg-blue-600/10'
           )}>
             ● {incident.severityScore >= 8 ? 'CRITICAL' : incident.severityScore >= 5 ? 'HIGH' : 'LOW'}
           </span>
@@ -103,27 +103,27 @@ function DetailPanel({
           )}
         </div>
 
-        <div className="divide-y divide-[#1e2d40]">
+        <div className="divide-y divide-[#e2e8f0]">
           {/* LOCATION */}
           <section className="px-4 py-3 space-y-1">
             <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Location</h4>
-            <p className="font-semibold text-slate-200">{incident.cues[0] ?? 'Port Harcourt'}</p>
-            <p className="text-slate-400">Port Harcourt, Rivers State</p>
-            <p className="text-slate-600 font-mono text-[10px]">{coords}</p>
+            <p className="font-semibold text-slate-800">{incident.cues[0] ?? 'Port Harcourt'}</p>
+            <p className="text-slate-600">Port Harcourt, Rivers State</p>
+            <p className="text-slate-500 font-mono text-[10px]">{coords}</p>
           </section>
 
           {/* SUMMARY */}
           <section className="px-4 py-3 space-y-1.5">
             <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Summary</h4>
-            <p className="text-slate-300 leading-relaxed">{incident.summary || incident.description}</p>
+            <p className="text-slate-700 leading-relaxed">{incident.summary || incident.description}</p>
           </section>
 
           {/* CASUALTIES */}
           <section className="px-4 py-3">
             <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Casualties</h4>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Persons affected</span>
-              <span className="text-slate-200 font-bold">{incident.reportersCount} Report{incident.reportersCount !== 1 ? 's' : ''}</span>
+              <span className="text-slate-600">Persons affected</span>
+              <span className="text-slate-800 font-bold">{incident.reportersCount} Report{incident.reportersCount !== 1 ? 's' : ''}</span>
             </div>
           </section>
 
@@ -134,7 +134,7 @@ function DetailPanel({
               <p className="text-slate-500 text-[9px] uppercase tracking-wider mb-1">Key Indicators</p>
               <div className="flex flex-wrap gap-1">
                 {incident.cues.slice(0, 5).map((c, i) => (
-                  <span key={i} className="bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded text-[9px] font-semibold">{c}</span>
+                  <span key={i} className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-[9px] font-semibold">{c}</span>
                 ))}
               </div>
             </div>
@@ -156,14 +156,14 @@ function DetailPanel({
               Sources ({sources.length})
             </h4>
             {sources.map((src, i) => (
-              <div key={i} className="bg-[#111827] border border-[#1e2d40] rounded-lg p-2.5 space-y-1">
+              <div key={i} className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">
+                  <span className="text-[9px] font-bold text-blue-500 uppercase tracking-wider">
                     {i === 0 ? 'Gemini AI' : 'Source ' + (i + 1)}
                   </span>
-                  <span className="text-[9px] text-slate-600">Tier A</span>
+                  <span className="text-[9px] text-slate-500">Tier A</span>
                 </div>
-                <p className="text-slate-400 leading-relaxed line-clamp-2">{src}</p>
+                <p className="text-slate-600 leading-relaxed line-clamp-2">{src}</p>
               </div>
             ))}
           </section>
@@ -174,14 +174,14 @@ function DetailPanel({
             <div>
               <div className="flex justify-between text-[9px] mb-1.5">
                 <span className="text-slate-500">Confidence</span>
-                <span className="font-bold text-emerald-400">{incident.confidenceScore}%</span>
+                <span className="font-bold text-blue-500">{incident.confidenceScore}%</span>
               </div>
-              <div className="h-1 bg-[#1e2d40] rounded overflow-hidden">
+              <div className="h-1 bg-[#e2e8f0] rounded overflow-hidden">
                 <div
                   className="h-full rounded transition-all duration-700"
                   style={{
                     width: `${incident.confidenceScore}%`,
-                    background: incident.confidenceScore >= 70 ? '#10b981' : incident.confidenceScore >= 40 ? '#f59e0b' : '#ef4444',
+                    background: incident.confidenceScore >= 70 ? '#2563eb' : incident.confidenceScore >= 40 ? '#f59e0b' : '#ef4444',
                   }}
                 />
               </div>
@@ -202,7 +202,7 @@ function DetailPanel({
             ].map(({ label, value }) => (
               <div key={label} className="flex justify-between">
                 <span className="text-slate-500">{label}</span>
-                <span className="text-slate-300 font-medium">{value}</span>
+                <span className="text-slate-700 font-medium">{value}</span>
               </div>
             ))}
           </section>
@@ -210,24 +210,24 @@ function DetailPanel({
       </div>
 
       {/* Actions */}
-      <div className="shrink-0 p-3 border-t border-[#1e2d40] space-y-2">
+      <div className="shrink-0 p-3 border-t border-[#e2e8f0] space-y-2">
         <button
           onClick={() => { addAlert({ incidentId: incident.id, type: 'URGENT', message: `⚠ ${incident.type} alert — ${incident.cues[0] ?? 'Port Harcourt'}. Avoid area, emergency services en route.`, radiusKm: 3 }); setDispatched(true); }}
           disabled={dispatched}
           className={cn(
             'w-full py-2.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-2 transition-all',
             dispatched
-              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+              ? 'bg-blue-600/15 text-blue-500 border border-blue-600/25'
               : 'bg-red-600 text-white hover:bg-red-500 shadow shadow-red-600/20'
           )}
         >
           {dispatched ? <><CheckCircle2 className="w-3.5 h-3.5" /> Alert Dispatched</> : <><Send className="w-3.5 h-3.5" /> Dispatch Alert</>}
         </button>
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => verifyIncident(incident.id)} className="py-2 rounded-lg text-[10px] font-bold bg-[#1e2d40] border border-[#2d3f55] text-slate-300 hover:bg-[#2d3f55] transition-all flex items-center justify-center gap-1.5">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Verify
+          <button onClick={() => verifyIncident(incident.id)} className="py-2 rounded-lg text-[10px] font-bold bg-[#e2e8f0] border border-[#cbd5e1] text-slate-700 hover:bg-[#cbd5e1] transition-all flex items-center justify-center gap-1.5">
+            <CheckCircle2 className="w-3 h-3 text-blue-500" /> Verify
           </button>
-          <button onClick={() => { closeIncident(incident.id); onClose(); }} className="py-2 rounded-lg text-[10px] font-bold bg-[#1e2d40] border border-[#2d3f55] text-slate-300 hover:bg-[#2d3f55] transition-all flex items-center justify-center gap-1.5">
+          <button onClick={() => { closeIncident(incident.id); onClose(); }} className="py-2 rounded-lg text-[10px] font-bold bg-[#e2e8f0] border border-[#cbd5e1] text-slate-700 hover:bg-[#cbd5e1] transition-all flex items-center justify-center gap-1.5">
             <CheckSquare className="w-3 h-3 text-blue-400" /> Resolve
           </button>
         </div>
@@ -261,17 +261,17 @@ function IntelFeed({
   });
 
   return (
-    <div className="w-[300px] shrink-0 flex flex-col bg-[#080f1a] border-l border-[#1e2d40]">
+    <div className="w-[300px] shrink-0 flex flex-col bg-[#f1f5f9] border-l border-[#e2e8f0]">
       {/* Feed header */}
-      <div className="px-4 py-2.5 border-b border-[#1e2d40] shrink-0">
+      <div className="px-4 py-2.5 border-b border-[#e2e8f0] shrink-0">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-200 uppercase tracking-widest">Intel Feed</span>
+            <span className="text-[10px] font-bold text-slate-800 uppercase tracking-widest">Intel Feed</span>
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping absolute opacity-60" />
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 relative" />
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping absolute opacity-60" />
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 relative" />
             </span>
-            <span className="text-[9px] text-emerald-400 font-bold">LIVE</span>
+            <span className="text-[9px] text-blue-500 font-bold">LIVE</span>
           </div>
           <span className="text-[9px] text-slate-500 font-medium">{filtered.length} EVENTS</span>
         </div>
@@ -285,7 +285,7 @@ function IntelFeed({
                 'px-2 py-0.5 rounded text-[9px] font-bold transition-all',
                 timeFilter === t
                   ? 'bg-blue-600 text-white'
-                  : 'text-slate-500 hover:text-slate-300'
+                  : 'text-slate-500 hover:text-slate-700'
               )}
             >
               {t}
@@ -295,9 +295,9 @@ function IntelFeed({
       </div>
 
       {/* Feed items */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#1e2d40]">
+      <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-[#e2e8f0]">
         {filtered.length === 0 && (
-          <p className="text-xs text-slate-600 text-center py-8">No events in this window.</p>
+          <p className="text-xs text-slate-500 text-center py-8">No events in this window.</p>
         )}
         {filtered.map((inc) => {
           const cfg   = TYPE_CFG[inc.type] ?? TYPE_CFG.Other;
@@ -312,7 +312,7 @@ function IntelFeed({
               onClick={() => onSelect(inc)}
               className={cn(
                 'w-full text-left px-4 py-3 space-y-1.5 transition-colors',
-                isSelected ? 'bg-[#1a2940]' : 'hover:bg-[#0f1929]'
+                isSelected ? 'bg-[#eef2f7]' : 'hover:bg-[#ffffff]'
               )}
             >
               {/* Row 1: type + time */}
@@ -326,13 +326,13 @@ function IntelFeed({
                     <span className="text-[8px] font-bold text-teal-400 bg-teal-400/10 border border-teal-400/20 px-1 rounded">⚡</span>
                   )}
                 </div>
-                <span className="text-[9px] text-slate-600">
+                <span className="text-[9px] text-slate-500">
                   {formatDistanceToNow(new Date(inc.timestamp), { addSuffix: false })} ago
                 </span>
               </div>
 
               {/* Row 2: location */}
-              <p className="text-[10px] text-slate-400 font-medium">{inc.cues[0] ?? 'Port Harcourt'}</p>
+              <p className="text-[10px] text-slate-600 font-medium">{inc.cues[0] ?? 'Port Harcourt'}</p>
 
               {/* Row 3: summary */}
               <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">
@@ -342,10 +342,10 @@ function IntelFeed({
               {/* Row 4: badges */}
               <div className="flex items-center gap-2">
                 <span className={cn('text-[9px] font-bold uppercase', sCfg.color)}>{stat}</span>
-                <span className="text-[9px] text-slate-600">
+                <span className="text-[9px] text-slate-500">
                   CONF {inc.confidenceScore}%
                 </span>
-                <span className="text-[9px] text-slate-600">
+                <span className="text-[9px] text-slate-500">
                   SRC {inc.corroboratingEvidence?.length ?? 1}
                 </span>
               </div>
@@ -418,7 +418,7 @@ export default function Dashboard() {
   const avgSev  = active.length ? active.reduce((s, i) => s + i.severityScore, 0) / active.length : 0;
   const threatScore = Math.round(avgSev * 10);
   const threatLevel = threatScore >= 70 ? 'HIGH' : threatScore >= 40 ? 'MED' : 'LOW';
-  const threatColor = threatScore >= 70 ? '#ef4444' : threatScore >= 40 ? '#f59e0b' : '#10b981';
+  const threatColor = threatScore >= 70 ? '#ef4444' : threatScore >= 40 ? '#f59e0b' : '#2563eb';
 
   // ── Type counts ───────────────────────────────────────────────────────────
   const typeCounts = Object.keys(TYPE_CFG).reduce<Record<string, number>>((acc, t) => {
@@ -442,25 +442,25 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="flex flex-col h-screen bg-[#080f1a] text-slate-300 overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex flex-col h-screen bg-[#f1f5f9] text-slate-700 overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
 
       {/* ── TOP HEADER ──────────────────────────────────────────────────── */}
-      <header className="h-10 shrink-0 flex items-center justify-between px-4 border-b border-[#1e2d40] bg-[#0a1220]">
+      <header className="h-10 shrink-0 flex items-center justify-between px-4 border-b border-[#e2e8f0] bg-[#f8fafc]">
         {/* Left: brand + region + live + threat */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-[#F97316] rounded flex items-center justify-center text-white font-extrabold text-[10px]">Ai</div>
-            <span className="text-slate-300 text-[11px] font-bold uppercase tracking-widest">AIWEE</span>
-            <span className="text-slate-600 text-[10px]">v1.0</span>
+            <span className="text-slate-700 text-[11px] font-bold uppercase tracking-widest">AIWEE</span>
+            <span className="text-slate-500 text-[10px]">v1.0</span>
           </div>
-          <div className="h-4 w-px bg-[#1e2d40]" />
+          <div className="h-4 w-px bg-[#e2e8f0]" />
           <div className="flex items-center gap-1.5 text-[10px]">
             <span className="text-slate-500 uppercase tracking-widest">Region</span>
-            <span className="text-slate-200 font-bold uppercase tracking-wider">Port Harcourt</span>
+            <span className="text-slate-800 font-bold uppercase tracking-wider">Port Harcourt</span>
           </div>
-          <div className="h-4 w-px bg-[#1e2d40]" />
+          <div className="h-4 w-px bg-[#e2e8f0]" />
           <LiveBadge status={liveStatus} onRefresh={refresh} compact />
-          <div className="h-4 w-px bg-[#1e2d40]" />
+          <div className="h-4 w-px bg-[#e2e8f0]" />
           {/* Threat badge */}
           <div
             className="flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider"
@@ -481,26 +481,26 @@ export default function Dashboard() {
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <span className="text-slate-500 uppercase tracking-widest">{label} </span>
-                <span className="text-slate-100 font-bold">{value}</span>
+                <span className="text-slate-900 font-bold">{value}</span>
               </div>
             ))}
           </div>
-          <div className="h-4 w-px bg-[#1e2d40]" />
-          <div className="text-slate-400 text-[10px]">
+          <div className="h-4 w-px bg-[#e2e8f0]" />
+          <div className="text-slate-600 text-[10px]">
             {format(currentTime, 'EEE, dd MMM yyyy').toUpperCase()}
           </div>
-          <div className="text-slate-200 font-mono font-bold text-[12px] tracking-widest" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <div className="text-slate-800 font-mono font-bold text-[12px] tracking-widest" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             {format(currentTime, 'HH:mm:ss')} WAT
           </div>
-          <div className="h-4 w-px bg-[#1e2d40]" />
+          <div className="h-4 w-px bg-[#e2e8f0]" />
           {/* Simulate button */}
           <button
             onClick={simulateIncident}
             className={cn(
               'flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold border uppercase tracking-wider transition-all',
               simFlash
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                : 'bg-[#1e2d40] text-slate-400 border-[#2d3f55] hover:text-slate-200 hover:bg-[#2d3f55]'
+                ? 'bg-blue-600/20 text-blue-500 border-blue-600/40'
+                : 'bg-[#e2e8f0] text-slate-600 border-[#cbd5e1] hover:text-slate-800 hover:bg-[#cbd5e1]'
             )}
           >
             <Shuffle className="w-3 h-3" />
@@ -513,7 +513,7 @@ export default function Dashboard() {
       <div className="flex-1 flex overflow-hidden">
 
         {/* LEFT SIDEBAR — types + status filters */}
-        <aside className="w-48 shrink-0 bg-[#080f1a] border-r border-[#1e2d40] overflow-y-auto custom-scrollbar">
+        <aside className="w-48 shrink-0 bg-[#f1f5f9] border-r border-[#e2e8f0] overflow-y-auto custom-scrollbar">
           <div className="p-3 space-y-4">
 
             {/* TYPE filters */}
@@ -531,17 +531,17 @@ export default function Dashboard() {
                       onClick={() => setTypeFilter(active ? null : type)}
                       className={cn(
                         'w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] transition-all',
-                        active ? 'bg-[#1e2d40]' : 'hover:bg-[#0f1929]'
+                        active ? 'bg-[#e2e8f0]' : 'hover:bg-[#ffffff]'
                       )}
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cfg.hex }} />
-                        <span className={active ? 'text-slate-200 font-semibold' : 'text-slate-400'}>{type}</span>
+                        <span className={active ? 'text-slate-800 font-semibold' : 'text-slate-600'}>{type}</span>
                       </div>
                       {count > 0 && (
                         <span className={cn(
                           'text-[10px] font-bold tabular-nums',
-                          active ? 'text-slate-200' : 'text-slate-500'
+                          active ? 'text-slate-800' : 'text-slate-500'
                         )}>{count}</span>
                       )}
                     </button>
@@ -550,7 +550,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="h-px bg-[#1e2d40]" />
+            <div className="h-px bg-[#e2e8f0]" />
 
             {/* STATUS filters */}
             <div>
@@ -568,12 +568,12 @@ export default function Dashboard() {
                       onClick={() => setStatusFilter(isActive ? null : stat)}
                       className={cn(
                         'w-full flex items-center justify-between px-2 py-1.5 rounded text-[11px] transition-all',
-                        isActive ? 'bg-[#1e2d40]' : 'hover:bg-[#0f1929]'
+                        isActive ? 'bg-[#e2e8f0]' : 'hover:bg-[#ffffff]'
                       )}
                     >
                       <div className="flex items-center gap-2">
                         <Icon className={cn('w-3 h-3 shrink-0', cfg.color)} />
-                        <span className={isActive ? 'text-slate-200 font-semibold' : 'text-slate-400'}>{stat}</span>
+                        <span className={isActive ? 'text-slate-800 font-semibold' : 'text-slate-600'}>{stat}</span>
                       </div>
                       {count > 0 && (
                         <span className={cn('text-[10px] font-bold tabular-nums', cfg.color)}>{count}</span>
@@ -585,18 +585,18 @@ export default function Dashboard() {
             </div>
 
             {/* Brief / Threat summary */}
-            <div className="h-px bg-[#1e2d40]" />
+            <div className="h-px bg-[#e2e8f0]" />
             <div className="space-y-2">
               <h3 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Threat Summary</h3>
-              <div className="bg-[#0f1929] border border-[#1e2d40] rounded-lg p-2.5 space-y-1">
+              <div className="bg-[#ffffff] border border-[#e2e8f0] rounded-lg p-2.5 space-y-1">
                 <div className="flex justify-between text-[9px]">
                   <span className="text-slate-500">Avg Severity</span>
                   <span className="font-bold" style={{ color: threatColor }}>{avgSev.toFixed(1)} / 10</span>
                 </div>
-                <div className="h-1 bg-[#1e2d40] rounded overflow-hidden">
+                <div className="h-1 bg-[#e2e8f0] rounded overflow-hidden">
                   <div className="h-full rounded" style={{ width: `${avgSev * 10}%`, background: threatColor }} />
                 </div>
-                <p className="text-[9px] text-slate-600 leading-relaxed mt-1">
+                <p className="text-[9px] text-slate-500 leading-relaxed mt-1">
                   {active.length} active incident{active.length !== 1 ? 's' : ''} across Port Harcourt.
                 </p>
               </div>
@@ -613,42 +613,42 @@ export default function Dashboard() {
           />
 
           {/* Severity overlay — top right */}
-          <div className="absolute top-3 right-3 z-400 flex gap-2">
+          <div className="absolute top-3 right-3 z-[400] flex gap-2">
             {[
               { label: 'Urgent', value: active.filter(i => i.severityScore >= 8).length, color: 'text-red-400' },
               { label: 'Medium', value: active.filter(i => i.severityScore >= 5 && i.severityScore < 8).length, color: 'text-amber-400' },
-              { label: 'Low',    value: active.filter(i => i.severityScore < 5).length, color: 'text-emerald-400' },
+              { label: 'Low',    value: active.filter(i => i.severityScore < 5).length, color: 'text-blue-500' },
             ].map(s => (
               <div key={s.label} className="glass rounded-lg px-3 py-2 text-center pointer-events-none">
                 <p className={cn('text-xl font-extrabold', s.color)}>{s.value}</p>
-                <p className="text-[8px] text-slate-400 uppercase tracking-wider">{s.label}</p>
+                <p className="text-[8px] text-slate-600 uppercase tracking-wider">{s.label}</p>
               </div>
             ))}
           </div>
 
           {/* Legend — bottom left */}
-          <div className="absolute bottom-3 left-3 z-400">
+          <div className="absolute bottom-3 left-3 z-[400]">
             <div className="glass rounded-lg p-2.5 space-y-1.5">
               <h4 className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Severity</h4>
               {[
                 ['bg-red-500',     'Critical — Sev 8+'],
                 ['bg-amber-500',   'High — Sev 5–7'],
-                ['bg-emerald-500', 'Low — Sev 1–4'],
+                ['bg-blue-600', 'Low — Sev 1–4'],
               ].map(([dot, label]) => (
                 <div key={label} className="flex items-center gap-2">
                   <div className={cn('w-2 h-2 rounded-full shrink-0', dot)} />
-                  <span className="text-[9px] text-slate-300">{label}</span>
+                  <span className="text-[9px] text-slate-700">{label}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* "Today's Brief" ticker — bottom center */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-400">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400]">
             <div className="glass rounded-lg px-4 py-2 flex items-center gap-3 max-w-sm">
               <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />
               <span className="text-[9px] text-amber-400 font-bold uppercase tracking-wider">Today's Brief</span>
-              <span className="text-[9px] text-slate-300 truncate">
+              <span className="text-[9px] text-slate-700 truncate">
                 {displayedIncidents[0]?.summary?.slice(0, 55) ?? 'No active incidents.'} …
               </span>
             </div>
@@ -672,20 +672,20 @@ export default function Dashboard() {
       </div>
 
       {/* ── BOTTOM BAR ───────────────────────────────────────────────────── */}
-      <footer className="h-7 shrink-0 border-t border-[#1e2d40] bg-[#0a1220] flex items-center justify-between px-4 text-[9px]">
+      <footer className="h-7 shrink-0 border-t border-[#e2e8f0] bg-[#f8fafc] flex items-center justify-between px-4 text-[9px]">
         {/* Left: quick stats */}
         <div className="flex items-center gap-4 text-slate-500">
-          <span className="text-slate-600 font-bold">48H</span>
+          <span className="text-slate-500 font-bold">48H</span>
           {[
             ['INCIDENTS', active.length],
             ['ACTIVE', active.filter(i => i.status !== 'VERIFIED').length],
             ['LIVE FEED', active.filter(i => (i as any).source === 'live').length],
           ].map(([l, v]) => (
-            <span key={l as string}><span className="text-slate-500">{l} </span><span className="text-slate-300 font-bold">{v}</span></span>
+            <span key={l as string}><span className="text-slate-500">{l} </span><span className="text-slate-700 font-bold">{v}</span></span>
           ))}
-          <span className="w-px h-4 bg-[#1e2d40]" />
-          <span className="text-slate-600 font-bold">TOTAL</span>
-          <span><span className="text-slate-500">ALL</span> <span className="text-slate-300 font-bold">{incidents.length}</span></span>
+          <span className="w-px h-4 bg-[#e2e8f0]" />
+          <span className="text-slate-500 font-bold">TOTAL</span>
+          <span><span className="text-slate-500">ALL</span> <span className="text-slate-700 font-bold">{incidents.length}</span></span>
         </div>
 
         {/* Right: type counts */}
@@ -694,7 +694,7 @@ export default function Dashboard() {
             <span key={type} className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full" style={{ background: cfg.hex }} />
               <span className="text-slate-500">{type}</span>
-              <span className="text-slate-300 font-bold">{typeCounts[type]}</span>
+              <span className="text-slate-700 font-bold">{typeCounts[type]}</span>
             </span>
           ))}
         </div>

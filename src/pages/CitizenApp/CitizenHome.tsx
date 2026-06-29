@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useIncidentStore, type Incident } from "../../store/useIncidentStore";
 import MapView from "../../components/Map";
 import { LiveBadge } from "../../components/LiveBadge";
@@ -14,6 +14,7 @@ import {
   Check,
   X as XIcon,
   AlertTriangle,
+  Plus,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "../../lib/utils";
@@ -41,9 +42,9 @@ const TYPE_CONFIG: Record<
     hex: "#ec4899",
   },
   Medical: {
-    bg: "bg-emerald-500/15",
-    text: "text-emerald-400",
-    dot: "bg-emerald-500",
+    bg: "bg-blue-600/15",
+    text: "text-blue-500",
+    dot: "bg-blue-600",
     hex: "#10b981",
   },
   Flood: {
@@ -53,9 +54,9 @@ const TYPE_CONFIG: Record<
     hex: "#06b6d4",
   },
   Other: {
-    bg: "bg-zinc-700/40",
-    text: "text-zinc-300",
-    dot: "bg-zinc-500",
+    bg: "bg-slate-300/40",
+    text: "text-slate-700",
+    dot: "bg-slate-500",
     hex: "#8b5cf6",
   },
 };
@@ -89,15 +90,15 @@ function IncidentDrawer({
 
   return (
     // Fixed overlay so the drawer is never clipped by parent scroll containers
-    <div className="fixed inset-0 z-9999 flex flex-col justify-end">
+    <div className="fixed inset-0 z-[9999] flex flex-col justify-end">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-[#0B1121]/60 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
 
       {/* Sheet */}
-      <div className="relative bg-[#0B1121]/95 backdrop-blur-3xl border-t border-white/10 rounded-t-[32px] animate-slide-up max-w-md w-full mx-auto overflow-hidden shadow-2xl">
+      <div className="relative bg-white backdrop-blur-3xl border-t border-slate-200 rounded-t-[32px] animate-slide-up max-w-md w-full mx-auto overflow-hidden shadow-2xl">
         {/* Ambient top glow */}
         <div
           className={cn(
@@ -108,7 +109,7 @@ function IncidentDrawer({
 
         {/* Handle */}
         <div className="flex justify-center pt-4 pb-2 relative z-10">
-          <div className="w-12 h-1.5 rounded-full bg-white/10" />
+          <div className="w-12 h-1.5 rounded-full bg-slate-300" />
         </div>
 
         <div className="px-6 pt-2 pb-8 space-y-5 max-h-[75vh] overflow-y-auto relative z-10">
@@ -117,7 +118,7 @@ function IncidentDrawer({
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 className={cn(
-                  "px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border border-white/[0.08]",
+                  "px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border border-slate-200",
                   cfg.bg,
                   cfg.text,
                 )}
@@ -125,7 +126,7 @@ function IncidentDrawer({
                 {incident.type}
               </span>
               {incident.status === "VERIFIED" && (
-                <span className="px-3 py-1.5 rounded-xl text-[11px] font-black border bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                <span className="px-3 py-1.5 rounded-xl text-[11px] font-black border bg-blue-600/10 text-blue-500 border-blue-600/30">
                   ✓ VERIFIED
                 </span>
               )}
@@ -137,20 +138,20 @@ function IncidentDrawer({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
+              className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors"
             >
-              <ChevronDown className="w-5 h-5 text-white/70" />
+              <ChevronDown className="w-5 h-5 text-slate-500" />
             </button>
           </div>
 
           {/* Summary */}
-          <p className="text-zinc-200 text-sm leading-relaxed">
+          <p className="text-slate-800 text-sm leading-relaxed">
             {incident.summary || incident.description}
           </p>
 
           {/* Confidence bar */}
           <div className="space-y-1.5">
-            <div className="flex justify-between text-[9px] text-zinc-500 font-semibold uppercase tracking-wider">
+            <div className="flex justify-between text-[9px] text-slate-500 font-semibold uppercase tracking-wider">
               <span>AI Confidence</span>
               <span
                 style={{
@@ -165,7 +166,7 @@ function IncidentDrawer({
                 {incident.confidenceScore}%
               </span>
             </div>
-            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
@@ -192,7 +193,7 @@ function IncidentDrawer({
                     ? "text-red-400"
                     : incident.severityScore >= 5
                       ? "text-amber-400"
-                      : "text-emerald-400",
+                      : "text-blue-500",
               },
               {
                 label: "Reports",
@@ -204,13 +205,13 @@ function IncidentDrawer({
                 value: incident.status,
                 color:
                   incident.status === "VERIFIED"
-                    ? "text-emerald-400"
+                    ? "text-blue-500"
                     : "text-amber-400",
               },
             ].map((m) => (
               <div
                 key={m.label}
-                className="bg-white/[0.03] border border-white/[0.04] rounded-2xl p-3 flex flex-col items-center justify-center text-center"
+                className="bg-slate-100 border border-slate-200 rounded-2xl p-3 flex flex-col items-center justify-center text-center"
               >
                 <p
                   className={cn(
@@ -220,7 +221,7 @@ function IncidentDrawer({
                 >
                   {m.value}
                 </p>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mt-1.5">
+                <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold mt-1.5">
                   {m.label}
                 </p>
               </div>
@@ -228,7 +229,7 @@ function IncidentDrawer({
           </div>
 
           {/* Location & time */}
-          <div className="flex items-center gap-4 text-[10px] text-zinc-500">
+          <div className="flex items-center gap-4 text-[10px] text-slate-500">
             <span className="flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               {incident.cues[0] ?? "Port Harcourt"}
@@ -247,7 +248,7 @@ function IncidentDrawer({
               {incident.cues.slice(1, 6).map((c) => (
                 <span
                   key={c}
-                  className="bg-zinc-800 border border-zinc-700 text-zinc-400 text-[9px] font-semibold px-2 py-0.5 rounded-md"
+                  className="bg-slate-200 border border-slate-300 text-slate-500 text-[9px] font-semibold px-2 py-0.5 rounded-md"
                 >
                   {c}
                 </span>
@@ -258,7 +259,7 @@ function IncidentDrawer({
           {/* Timeline */}
           {incident.statusHistory && incident.statusHistory.length > 0 && (
             <div className="space-y-1.5">
-              <h4 className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+              <h4 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
                 Timeline
               </h4>
               <div className="space-y-1">
@@ -268,18 +269,18 @@ function IncidentDrawer({
                       className={cn(
                         "w-1.5 h-1.5 rounded-full shrink-0",
                         h.status === "VERIFIED"
-                          ? "bg-emerald-500"
+                          ? "bg-blue-600"
                           : h.status === "CLOSED"
-                            ? "bg-zinc-500"
+                            ? "bg-slate-500"
                             : "bg-amber-500",
                       )}
                     />
-                    <span className="text-zinc-500">
+                    <span className="text-slate-500">
                       {formatDistanceToNow(new Date(h.timestamp), {
                         addSuffix: true,
                       })}
                     </span>
-                    <span className="text-zinc-400 font-semibold">
+                    <span className="text-slate-500 font-semibold">
                       {h.note ?? h.status}
                     </span>
                   </div>
@@ -291,7 +292,7 @@ function IncidentDrawer({
           {/* Crowd confirm CTA — only for unverified */}
           {incident.status === "UNVERIFIED" && (
             <div className="space-y-2 pt-1">
-              <p className="text-xs text-zinc-400 font-medium text-center">
+              <p className="text-xs text-slate-500 font-medium text-center">
                 Can you confirm this incident?
               </p>
               {voted ? (
@@ -299,8 +300,8 @@ function IncidentDrawer({
                   className={cn(
                     "py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border",
                     voted === "yes"
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
-                      : "bg-zinc-700/40 text-zinc-400 border-zinc-600",
+                      ? "bg-blue-600/10 text-blue-500 border-blue-600/25"
+                      : "bg-slate-300/40 text-slate-500 border-slate-400",
                   )}
                 >
                   {voted === "yes" ? (
@@ -318,13 +319,13 @@ function IncidentDrawer({
                 <div className="flex gap-2">
                   <button
                     onClick={() => vote("yes")}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 py-3 rounded-xl text-xs font-bold hover:bg-emerald-500/25 active:scale-[0.98] transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600/15 text-blue-500 border border-blue-600/30 py-3 rounded-xl text-xs font-bold hover:bg-blue-600/25 active:scale-[0.98] transition-all"
                   >
                     <Check className="w-4 h-4" /> YES, I see it
                   </button>
                   <button
                     onClick={() => vote("no")}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-zinc-800 text-zinc-400 border border-zinc-700 py-3 rounded-xl text-xs font-bold hover:bg-zinc-700 active:scale-[0.98] transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-slate-200 text-slate-500 border border-slate-300 py-3 rounded-xl text-xs font-bold hover:bg-slate-300 active:scale-[0.98] transition-all"
                   >
                     <XIcon className="w-4 h-4" /> NO
                   </button>
@@ -404,28 +405,28 @@ export default function CitizenHome() {
   return (
     <div className="flex flex-col h-full">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 shrink-0 bg-[#0B1121]/90 backdrop-blur-xl border-b border-white/[0.06]">
+      <header className="sticky top-0 z-20 shrink-0 bg-slate-100 backdrop-blur-xl border-b border-slate-200">
         <div className="px-4 py-3 flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-[10px] flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-[10px] flex items-center justify-center shadow-lg shadow-blue-600/30">
               <ShieldAlert
                 className="w-[18px] h-[18px] text-white"
                 strokeWidth={2.5}
               />
             </div>
             <div>
-              <h1 className="text-[15px] font-extrabold text-white leading-none tracking-tight">
+              <h1 className="text-[15px] font-extrabold text-slate-900 leading-none tracking-tight">
                 AiWee
               </h1>
-              <p className="text-[9px] text-zinc-500 leading-none mt-0.5 font-medium tracking-wider uppercase">
+              <p className="text-[9px] text-slate-500 leading-none mt-0.5 font-medium tracking-wider uppercase">
                 Port Harcourt
               </p>
             </div>
           </div>
 
           {/* Map / Feed toggle */}
-          <div className="flex items-center gap-1 bg-zinc-800/70 border border-white/[0.06] rounded-full p-1">
+          <div className="flex items-center gap-1 bg-slate-200/70 border border-slate-200 rounded-full p-1">
             {(["map", "feed"] as const).map((tab) => (
               <button
                 key={tab}
@@ -433,8 +434,8 @@ export default function CitizenHome() {
                 className={cn(
                   "px-4 py-1.5 rounded-full text-xs font-bold transition-all capitalize tracking-wide",
                   activeTab === tab
-                    ? "bg-emerald-500 text-zinc-950 shadow-sm shadow-emerald-500/30"
-                    : "text-zinc-400 hover:text-zinc-200",
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                    : "text-slate-500 hover:text-slate-800",
                 )}
               >
                 {tab}
@@ -447,7 +448,7 @@ export default function CitizenHome() {
         <div className="px-4 pb-2.5 flex items-center justify-between">
           <LiveBadge status={liveStatus} onRefresh={refresh} />
           {liveCount > 0 && (
-            <div className="flex items-center gap-1.5 text-[9px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
+            <div className="flex items-center gap-1.5 text-[9px] text-blue-500 font-bold bg-blue-600/10 border border-blue-600/20 rounded-full px-2.5 py-1">
               <Zap className="w-2.5 h-2.5" /> {liveCount} AI-sourced
             </div>
           )}
@@ -466,60 +467,69 @@ export default function CitizenHome() {
             />
 
             {/* Stat overlays — top right */}
-            <div className="absolute top-3 right-3 flex flex-col gap-2 z-400 pointer-events-none">
-              <div className="bg-[#0B1121]/85 backdrop-blur-md border border-white/[0.08] rounded-2xl px-3.5 py-2.5 text-right pointer-events-auto shadow-lg">
-                <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">
+            <div className="absolute top-3 right-3 flex flex-col gap-2 z-[400] pointer-events-none">
+              <div className="bg-slate-100 backdrop-blur-md border border-slate-200 rounded-2xl px-3.5 py-2.5 text-right pointer-events-auto shadow-lg">
+                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
                   ACTIVE
                 </p>
-                <p className="text-2xl font-black text-white leading-tight">
+                <p className="text-2xl font-black text-slate-900 leading-tight">
                   {activeIncidents.length}
                 </p>
               </div>
-              <div className="bg-[#0B1121]/85 backdrop-blur-md border border-emerald-500/20 rounded-2xl px-3.5 py-2.5 text-right pointer-events-auto shadow-lg shadow-emerald-500/10">
-                <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">
+              <div className="bg-slate-100 backdrop-blur-md border border-blue-600/20 rounded-2xl px-3.5 py-2.5 text-right pointer-events-auto shadow-lg shadow-blue-600/10">
+                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
                   VERIFIED
                 </p>
-                <p className="text-2xl font-black text-emerald-400 leading-tight">
+                <p className="text-2xl font-black text-blue-500 leading-tight">
                   {verified}
                 </p>
               </div>
             </div>
 
+            {/* Report button — floating round FAB on top of the map */}
+            <Link
+              to="/citizen/report"
+              aria-label="Report"
+              className="absolute bottom-40 lg:bottom-44 right-4 z-[450] flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-blue-500 shadow-lg shadow-blue-600/40 hover:shadow-blue-600/60 transition-all active:scale-95"
+            >
+              <Plus size={26} strokeWidth={3} className="text-white" />
+            </Link>
+
             {/* Incident ticker — bottom of map, above bottom nav */}
             {activeIncidents.length > 0 && !selectedIncident && (
               <button
                 onClick={() => setSelectedIncident(activeIncidents[0])}
-                className="absolute bottom- lg:bottom-10 left-4 right-4 z-[400] bg-[#0B1121]/80 backdrop-blur-2xl rounded-2xl p-3.5 flex items-center gap-3 border border-emerald-500/20 shadow-lg shadow-emerald-500/10 hover:border-emerald-500/40 transition-all animate-fade-in group active:scale-[0.98]"
+                className="absolute bottom-24 lg:bottom-28 left-4 right-4 z-[400] bg-slate-100 backdrop-blur-2xl rounded-2xl p-3.5 flex items-center gap-3 border border-blue-600/20 shadow-lg shadow-blue-600/10 hover:border-blue-600/40 transition-all animate-fade-in group active:scale-[0.98]"
               >
-                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 group-hover:bg-emerald-500/20 transition-colors">
-                  <AlertTriangle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="w-8 h-8 rounded-full bg-blue-600/10 flex items-center justify-center shrink-0 group-hover:bg-blue-600/20 transition-colors">
+                  <AlertTriangle className="w-4 h-4 text-blue-500 shrink-0" />
                 </div>
                 <div className="flex-1 text-left overflow-hidden">
-                  <span className="text-xs text-zinc-200 font-bold block truncate">
+                  <span className="text-xs text-slate-800 font-bold block truncate">
                     {activeIncidents[0].summary ||
                       activeIncidents[0].description}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-                    <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
                       {activeIncidents[0].type} · VIEW Details
                     </span>
                   </div>
                 </div>
-                <ChevronDown className="w-5 h-5 text-emerald-500/50 group-hover:text-emerald-400 -rotate-90 shrink-0 transition-colors" />
+                <ChevronDown className="w-5 h-5 text-blue-600/50 group-hover:text-blue-500 -rotate-90 shrink-0 transition-colors" />
               </button>
             )}
           </div>
         ) : (
           // Feed tab — scrollable list
-          <div className="h-full overflow-y-auto p-4 space-y-3">
+          <div className="h-full overflow-y-auto p-4 space-y-3 pb-28">
             {activeIncidents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-zinc-500 animate-fade-in gap-3">
+              <div className="flex flex-col items-center justify-center py-20 text-slate-500 animate-fade-in gap-3">
                 <ShieldAlert className="w-12 h-12 opacity-15" />
                 <p className="text-sm font-medium">
                   All clear — no active incidents.
                 </p>
-                <p className="text-xs text-zinc-600 text-center">
+                <p className="text-xs text-slate-400 text-center">
                   Live AI feed updates every 5 minutes.
                 </p>
               </div>
@@ -532,7 +542,7 @@ export default function CitizenHome() {
                   <button
                     key={incident.id}
                     onClick={() => setSelectedIncident(incident)}
-                    className="w-full text-left relative bg-[#0B1121]/60 backdrop-blur-xl border border-white/[0.04] rounded-[24px] p-5 space-y-3.5 animate-slide-up hover:border-white/[0.08] hover:bg-[#0B1121]/80 transition-all active:scale-[0.98] overflow-hidden shadow-xl group"
+                    className="w-full text-left relative bg-slate-100 backdrop-blur-xl border border-slate-200 rounded-[24px] p-5 space-y-3.5 animate-slide-up hover:border-slate-200 hover:bg-slate-100 transition-all active:scale-[0.98] overflow-hidden shadow-xl group"
                     style={{ animationDelay: `${idx * 0.05}s` }}
                   >
                     {/* Background ambient glow based on severity */}
@@ -547,7 +557,7 @@ export default function CitizenHome() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={cn(
-                            "px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/[0.05]",
+                            "px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200",
                             cfg.bg,
                             cfg.text,
                           )}
@@ -555,7 +565,7 @@ export default function CitizenHome() {
                           {incident.type}
                         </span>
                         {incident.status === "VERIFIED" && (
-                          <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 bg-emerald-500/10 text-emerald-400">
+                          <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-600/20 bg-blue-600/10 text-blue-500">
                             ✓ Verified
                           </span>
                         )}
@@ -565,21 +575,21 @@ export default function CitizenHome() {
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] text-zinc-500 font-bold flex items-center gap-1.5 shrink-0 bg-white/[0.03] px-2 py-1 rounded-lg">
-                        <Clock className="w-3 h-3 text-zinc-600" />
+                      <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1.5 shrink-0 bg-slate-100 px-2 py-1 rounded-lg">
+                        <Clock className="w-3 h-3 text-slate-400" />
                         {formatDistanceToNow(new Date(incident.timestamp), {
                           addSuffix: true,
                         })}
                       </span>
                     </div>
 
-                    <p className="text-zinc-200 text-sm leading-relaxed line-clamp-2 relative z-10 font-medium">
+                    <p className="text-slate-800 text-sm leading-relaxed line-clamp-2 relative z-10 font-medium">
                       {incident.summary || incident.description}
                     </p>
 
                     {/* Confidence bar */}
-                    <div className="space-y-1.5 relative z-10 bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.02]">
-                      <div className="flex justify-between text-[9px] text-zinc-500 font-bold uppercase tracking-widest">
+                    <div className="space-y-1.5 relative z-10 bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+                      <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase tracking-widest">
                         <span>AI Confidence</span>
                         <span
                           style={{
@@ -594,7 +604,7 @@ export default function CitizenHome() {
                           {incident.confidenceScore}%
                         </span>
                       </div>
-                      <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-700"
                           style={{
@@ -610,13 +620,13 @@ export default function CitizenHome() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 border-t border-white/[0.04] relative z-10">
-                      <span className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-bold">
-                        <MapPin className="w-3 h-3 text-zinc-500" />
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-200 relative z-10">
+                      <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">
+                        <MapPin className="w-3 h-3 text-slate-500" />
                         {incident.cues[0] ?? "Port Harcourt"}
                       </span>
-                      <span className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-bold">
-                        <Users className="w-3 h-3 text-zinc-500" />
+                      <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">
+                        <Users className="w-3 h-3 text-slate-500" />
                         {incident.reportersCount} report
                         {incident.reportersCount !== 1 ? "s" : ""}
                       </span>

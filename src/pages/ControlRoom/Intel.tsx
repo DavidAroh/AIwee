@@ -9,7 +9,7 @@ import { Zap, Users, Shield, TrendingUp, Clock, BarChart2, Activity } from 'luci
 
 const TYPE_COLORS: Record<string, string> = {
   Fire: '#ef4444', Accident: '#f59e0b', Crime: '#ec4899',
-  Medical: '#10b981', Flood: '#06b6d4', Other: '#8b5cf6',
+  Medical: '#2563eb', Flood: '#06b6d4', Other: '#8b5cf6',
 };
 
 export default function Intel() {
@@ -40,7 +40,7 @@ export default function Intel() {
 
   // Confidence distribution buckets
   const confBuckets = useMemo(() => [
-    { label: 'High (70–100%)', count: totalActive.filter(i => i.confidenceScore >= 70).length, color: '#10b981' },
+    { label: 'High (70–100%)', count: totalActive.filter(i => i.confidenceScore >= 70).length, color: '#2563eb' },
     { label: 'Medium (40–69%)', count: totalActive.filter(i => i.confidenceScore >= 40 && i.confidenceScore < 70).length, color: '#f59e0b' },
     { label: 'Low (0–39%)', count: totalActive.filter(i => i.confidenceScore < 40).length, color: '#ef4444' },
   ], [totalActive]);
@@ -51,7 +51,7 @@ export default function Intel() {
   const sevBuckets = useMemo(() => [
     { label: 'Critical (8–10)', count: totalActive.filter(i => i.severityScore >= 8).length, color: '#ef4444' },
     { label: 'High (5–7)',      count: totalActive.filter(i => i.severityScore >= 5 && i.severityScore < 8).length, color: '#f59e0b' },
-    { label: 'Low (1–4)',       count: totalActive.filter(i => i.severityScore < 5).length, color: '#10b981' },
+    { label: 'Low (1–4)',       count: totalActive.filter(i => i.severityScore < 5).length, color: '#2563eb' },
   ], [totalActive]);
 
   const maxSevCount = Math.max(...sevBuckets.map(b => b.count), 1);
@@ -60,13 +60,13 @@ export default function Intel() {
   const recentAlerts = alerts.slice(0, 10);
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6 text-slate-300">
+    <div className="h-full overflow-y-auto p-6 space-y-6 text-slate-700">
       <div className="flex items-center gap-3 mb-2">
         <div className="p-2 bg-indigo-500/15 rounded-xl border border-indigo-500/25">
           <Activity className="w-5 h-5 text-indigo-400" />
         </div>
         <div>
-          <h2 className="text-lg font-extrabold text-white tracking-tight">Intelligence Analytics</h2>
+          <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Intelligence Analytics</h2>
           <p className="text-xs text-slate-500">AI confidence · source breakdown · verification metrics</p>
         </div>
       </div>
@@ -74,12 +74,12 @@ export default function Intel() {
       {/* ── KPI grid ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: 'Total Active',     value: totalActive.length, color: 'text-white',       icon: BarChart2, iconColor: 'text-slate-400' },
-          { label: 'Verified',         value: verified.length,    color: 'text-emerald-400', icon: Shield,    iconColor: 'text-emerald-400' },
+          { label: 'Total Active',     value: totalActive.length, color: 'text-slate-900',       icon: BarChart2, iconColor: 'text-slate-600' },
+          { label: 'Verified',         value: verified.length,    color: 'text-blue-500', icon: Shield,    iconColor: 'text-blue-500' },
           { label: 'Avg Confidence',   value: `${avgConf}%`,      color: 'text-blue-400',    icon: Zap,       iconColor: 'text-blue-400' },
           { label: 'Avg Severity',     value: avgSev,             color: 'text-amber-400',   icon: TrendingUp,iconColor: 'text-amber-400' },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-2">
+          <div key={kpi.label} className="bg-slate-100/60 border border-slate-200/50 rounded-xl p-4 space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{kpi.label}</p>
               <kpi.icon className={`w-4 h-4 ${kpi.iconColor}`} />
@@ -91,19 +91,19 @@ export default function Intel() {
 
       <div className="grid grid-cols-3 gap-4">
         {/* ── Confidence distribution ───────────────────────────────────── */}
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-100/60 border border-slate-200/50 rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Zap className="w-3.5 h-3.5 text-blue-400" />
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">AI Confidence</h3>
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">AI Confidence</h3>
           </div>
           <div className="space-y-2.5">
             {confBuckets.map((b) => (
               <div key={b.label} className="space-y-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-slate-400">{b.label}</span>
+                  <span className="text-slate-600">{b.label}</span>
                   <span className="font-bold" style={{ color: b.color }}>{b.count}</span>
                 </div>
-                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{ width: `${(b.count / maxConfCount) * 100}%`, background: b.color }}
@@ -115,19 +115,19 @@ export default function Intel() {
         </div>
 
         {/* ── Severity distribution ─────────────────────────────────────── */}
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-100/60 border border-slate-200/50 rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Severity Levels</h3>
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Severity Levels</h3>
           </div>
           <div className="space-y-2.5">
             {sevBuckets.map((b) => (
               <div key={b.label} className="space-y-1">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-slate-400">{b.label}</span>
+                  <span className="text-slate-600">{b.label}</span>
                   <span className="font-bold" style={{ color: b.color }}>{b.count}</span>
                 </div>
-                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{ width: `${(b.count / maxSevCount) * 100}%`, background: b.color }}
@@ -139,33 +139,33 @@ export default function Intel() {
         </div>
 
         {/* ── Source breakdown ──────────────────────────────────────────── */}
-        <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
+        <div className="bg-slate-100/60 border border-slate-200/50 rounded-xl p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Users className="w-3.5 h-3.5 text-emerald-400" />
-            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Source Breakdown</h3>
+            <Users className="w-3.5 h-3.5 text-blue-500" />
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Source Breakdown</h3>
           </div>
           <div className="space-y-3">
             {[
-              { label: 'Citizen Reports', count: citizen.length, color: '#10b981', pct: totalActive.length ? Math.round(citizen.length / totalActive.length * 100) : 0 },
+              { label: 'Citizen Reports', count: citizen.length, color: '#2563eb', pct: totalActive.length ? Math.round(citizen.length / totalActive.length * 100) : 0 },
               { label: 'AI Live Feed',    count: live.length,    color: '#3b82f6', pct: totalActive.length ? Math.round(live.length / totalActive.length * 100) : 0 },
             ].map((s) => (
               <div key={s.label} className="space-y-1.5">
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-slate-400">{s.label}</span>
+                  <span className="text-slate-600">{s.label}</span>
                   <span className="font-bold" style={{ color: s.color }}>{s.count} ({s.pct}%)</span>
                 </div>
-                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${s.pct}%`, background: s.color }} />
                 </div>
               </div>
             ))}
-            <div className="pt-2 border-t border-slate-700/40 space-y-1">
+            <div className="pt-2 border-t border-slate-200/40 space-y-1">
               {[
-                { label: 'Verified',   count: verified.length,   color: '#10b981' },
+                { label: 'Verified',   count: verified.length,   color: '#2563eb' },
                 { label: 'Unverified', count: unverified.length, color: '#f59e0b' },
               ].map((s) => (
                 <div key={s.label} className="flex justify-between text-[10px]">
-                  <span className="text-slate-400">{s.label}</span>
+                  <span className="text-slate-600">{s.label}</span>
                   <span className="font-bold" style={{ color: s.color }}>{s.count}</span>
                 </div>
               ))}
@@ -175,10 +175,10 @@ export default function Intel() {
       </div>
 
       {/* ── Incident type distribution ──────────────────────────────────── */}
-      <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
+      <div className="bg-slate-100/60 border border-slate-200/50 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2">
           <BarChart2 className="w-3.5 h-3.5 text-indigo-400" />
-          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Incident Type Distribution</h3>
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Incident Type Distribution</h3>
         </div>
         {typeCounts.length === 0 ? (
           <p className="text-xs text-slate-500 py-2">No incidents recorded.</p>
@@ -203,10 +203,10 @@ export default function Intel() {
       </div>
 
       {/* ── Alert timeline ──────────────────────────────────────────────── */}
-      <div className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
+      <div className="bg-slate-100/60 border border-slate-200/50 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-slate-400" />
-          <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Recent Alert Timeline</h3>
+          <Clock className="w-3.5 h-3.5 text-slate-600" />
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Recent Alert Timeline</h3>
         </div>
         {recentAlerts.length === 0 ? (
           <p className="text-xs text-slate-500">No alerts dispatched yet.</p>
@@ -221,16 +221,16 @@ export default function Intel() {
               const inc = useIncidentStore.getState().incidents.find(i => i.id === alert.incidentId);
 
               return (
-                <div key={alert.id} className="flex items-start gap-3 py-2 border-b border-slate-700/30 last:border-0">
+                <div key={alert.id} className="flex items-start gap-3 py-2 border-b border-slate-200/30 last:border-0">
                   <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: typeColor }} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] font-extrabold uppercase tracking-widest" style={{ color: typeColor }}>{alert.type}</span>
                       {inc && <span className="text-[9px] text-slate-500">{inc.type}</span>}
                     </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed truncate">{alert.message}</p>
+                    <p className="text-[11px] text-slate-700 leading-relaxed truncate">{alert.message}</p>
                   </div>
-                  <span className="text-[9px] text-slate-600 shrink-0">{formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}</span>
+                  <span className="text-[9px] text-slate-500 shrink-0">{formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}</span>
                 </div>
               );
             })}

@@ -9,6 +9,10 @@
  */
 import { GoogleGenAI, Type } from '@google/genai';
 import { fetchGoogleNewsIncidents } from './googleNewsRSS';
+import { fetchGdeltIncidents } from './gdelt';
+import { fetchOutletFeedIncidents } from './newsFeeds';
+import { fetchSocialMediaIncidents } from './socialMedia';
+import { isRecent } from './incidentHeuristics';
 
 // ── Client ─────────────────────────────────────────────────────────────────────
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
@@ -33,6 +37,39 @@ export interface LiveIncident {
 // ── Coordinate clamp — keeps everything inside Port Harcourt bbox ─────────────
 const clampLat = (v: number) => Math.max(4.70, Math.min(4.95, v));
 const clampLng = (v: number) => Math.max(6.90, Math.min(7.18, v));
+
+// How far back a news article still counts as a "live" incident. Configurable
+// via VITE_INCIDENT_RECENCY_DAYS; 30 days keeps the map populated with real,
+// source-linked incidents (PH safety news doesn't surface every single day).
+const RECENCY_DAYS = Number(import.meta.env.VITE_INCIDENT_RECENCY_DAYS) || 30;
+
+// ── Result cache + single-flight ──────────────────────────────────────────────
+// Avoids re-hitting (and rate-limiting) the news APIs on React StrictMode's
+// double-mount, on every navigation, and on reloads — and keeps the feed stable.
+const CACHE_TTL_MS = 10 * 60_000;
+const CACHE_KEY = "aiwee_live_cache";
+let memCache: { at: number; data: LiveIncident[] } | null = null;
+let inflight: Promise<LiveIncident[]> | null = null;
+
+// localStorage (not sessionStorage) so the cache is shared across tabs and
+// survives reloads — multiple open tabs would otherwise each hammer the news
+// APIs and trip GDELT's 1-request-per-5s limit.
+function readPersistedCache(): { at: number; data: LiveIncident[] } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePersistedCache(entry: { at: number; data: LiveIncident[] }): void {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+  } catch {
+    /* storage full / unavailable — in-memory cache still applies */
+  }
+}
 
 // ── Known PH location coordinates ─────────────────────────────────────────────
 const PH_COORDS: Record<string, [number, number]> = {
@@ -241,8 +278,49 @@ function isDuplicate(candidate: LiveIncident, existing: LiveIncident[]): boolean
   );
 }
 
-// ── Main fetch function ────────────────────────────────────────────────────────
-export async function fetchLivePortHarcourtIncidents(): Promise<LiveIncident[]> {
+// ── Public API: cached + single-flight ─────────────────────────────────────────
+// All callers (initial mount, StrictMode double-mount, page navigations, manual
+// refresh) funnel through here. A fresh network run happens at most once per
+// CACHE_TTL_MS; concurrent callers share one in-flight promise.
+export async function fetchLivePortHarcourtIncidents(
+  options: { force?: boolean } = {},
+): Promise<LiveIncident[]> {
+  const fresh = options.force === true;
+
+  // 1) In-memory cache (fastest path)
+  if (!fresh && memCache && Date.now() - memCache.at < CACHE_TTL_MS) {
+    return memCache.data;
+  }
+
+  // 2) sessionStorage cache (survives reloads within the tab)
+  if (!fresh && !memCache) {
+    const persisted = readPersistedCache();
+    if (persisted && Date.now() - persisted.at < CACHE_TTL_MS) {
+      memCache = persisted;
+      console.info(`[AiWee] serving ${persisted.data.length} incidents from cache`);
+      return persisted.data;
+    }
+  }
+
+  // 3) Single-flight: piggyback on an already-running fetch
+  if (inflight) return inflight;
+
+  inflight = fetchFreshIncidents()
+    .then((data) => {
+      const entry = { at: Date.now(), data };
+      memCache = entry;
+      writePersistedCache(entry);
+      return data;
+    })
+    .finally(() => {
+      inflight = null;
+    });
+
+  return inflight;
+}
+
+// ── Fresh network fetch (internal) ─────────────────────────────────────────────
+async function fetchFreshIncidents(): Promise<LiveIncident[]> {
   const now = new Date().toISOString();
   const dateStr = new Date().toLocaleDateString('en-NG', {
     timeZone: 'Africa/Lagos', day: 'numeric', month: 'long', year: 'numeric',
@@ -251,12 +329,23 @@ export async function fetchLivePortHarcourtIncidents(): Promise<LiveIncident[]> 
     timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit',
   }) + ' WAT';
 
-  // ── Run BOTH sources in parallel ─────────────────────────────────────────────
-  const [rssResult, geminiResult] = await Promise.allSettled([
+  // ── Run all real sources in parallel ─────────────────────────────────────────
+  const [rssResult, gdeltResult, feedsResult, socialResult, geminiResult] =
+    await Promise.allSettled([
     // Source 1: Google News RSS — zero API key, real headlines
     fetchGoogleNewsIncidents(),
 
-    // Source 2: Gemini + Google Search grounding — AI-structured incidents
+    // Source 2: GDELT DOC 2.0 — zero API key, real near-real-time news (JSON)
+    fetchGdeltIncidents(),
+
+    // Source 3: Direct RSS from major Nigerian outlets (Punch, Vanguard, …)
+    fetchOutletFeedIncidents(),
+
+    // Source 4: Social media (Reddit public JSON API) — eyewitness-grade
+    fetchSocialMediaIncidents(),
+
+    // Source 5: Gemini + Google Search grounding — ONLY emits incidents that
+    // are backed by real search results (no fabricated/pattern data).
     (async (): Promise<LiveIncident[]> => {
       const searchResponse = await ai.models.generateContent({
         model: 'gemini-2.0-flash',
@@ -278,34 +367,35 @@ Summarize what you find from real news sources. Include specific locations, seve
       const groundingChunks = searchResponse.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
       const sourceSummary   = groundingChunks.slice(0, 5).map((c: any) => c.web?.title ?? '').filter(Boolean).join('; ');
 
+      // Grounding-only: with no real sources we emit NOTHING rather than
+      // fabricating plausible-but-fake incidents.
+      if (groundingChunks.length === 0 || groundedText.trim().length < 40) {
+        console.info('[AiWee/Gemini] no grounded sources — skipping (real-data only)');
+        return [];
+      }
+
       const structureResponse = await ai.models.generateContent({
         model: 'gemini-2.0-flash',
         contents: `You are the AiWee incident structuring engine for Port Harcourt, Rivers State, Nigeria.
 
-Based on this Google-grounded news summary:
+Extract real public-safety incidents that are EXPLICITLY described in the Google-grounded news summary below. This powers a live emergency map, so accuracy is critical.
+
+Grounded news summary:
 """
 ${groundedText}
 """
 
-News sources found: ${sourceSummary || 'none — use realistic Port Harcourt pattern data'}
+News sources: ${sourceSummary}
 Current time: ${timeStr}, ${dateStr}
 
-Generate between 5 and 7 public safety incidents for the AiWee map.
-
-RULES:
-1. If real news was found, base incidents on it (high confidence 80–95)
-2. If no real news, generate realistic pattern-based incidents typical for Port Harcourt (confidence 55–75)
-3. Use ONLY real Port Harcourt neighbourhood names as locationName
-4. Vary severity: include some minor (1–4), some moderate (5–7), some critical (8–10)
-5. Be specific: use route names, market names, junction names in descriptions
-6. Include 3–5 keyword cues per incident
-
-Key Port Harcourt locations to use:
-Diobu Market (4.7895, 6.9847), Trans-Amadi (4.8301, 7.0298), Mile 1 Market (4.8002, 6.9751),
-D-Line (4.8197, 7.0153), Rumuola Road (4.8149, 7.0426), Rumuigbo Junction (4.8296, 6.9899),
-Woji Road (4.8392, 7.0254), Eleme Junction (4.7732, 7.0905), GRA Phase 1 (4.8103, 7.0073),
-Borokiri (4.7605, 7.0049), Eagle Island (4.7800, 6.9900), Peter Odili Road (4.8250, 7.0350),
-Aba Road (4.8100, 7.0300), Rumuokoro (4.8654, 7.0222)`,
+STRICT RULES:
+1. Output ONLY incidents that are clearly described in the summary above. Do NOT invent, guess, or pad the list with "typical" incidents.
+2. If the summary contains no concrete Port Harcourt safety incident, return an empty "incidents" array.
+3. Only include incidents that are recent (within roughly the last ${RECENCY_DAYS} days).
+4. locationName MUST be a real Port Harcourt neighbourhood/landmark mentioned in or clearly implied by the source.
+5. confidenceScore reflects how directly the source supports it (85–95 explicit report, 65–80 partial/secondhand).
+6. Set groundingSource to the news outlet/headline it came from.
+7. Include 3–5 keyword cues drawn from the actual report.`,
         config: {
           responseMimeType: 'application/json',
           responseSchema: INCIDENT_SCHEMA,
@@ -314,7 +404,7 @@ Aba Road (4.8100, 7.0300), Rumuokoro (4.8654, 7.0222)`,
 
       const parsed = JSON.parse(structureResponse.text ?? '{}') as { incidents: any[] };
       if (!Array.isArray(parsed.incidents) || parsed.incidents.length === 0) {
-        throw new Error('Gemini returned no incidents');
+        return [];
       }
 
       return parsed.incidents.slice(0, 8).map((item, i) => {
@@ -342,9 +432,15 @@ Aba Road (4.8100, 7.0300), Rumuokoro (4.8654, 7.0222)`,
   ]);
 
   const rssIncidents    = rssResult.status    === 'fulfilled' ? rssResult.value    : [];
+  const gdeltIncidents  = gdeltResult.status  === 'fulfilled' ? gdeltResult.value  : [];
+  const feedIncidents   = feedsResult.status  === 'fulfilled' ? feedsResult.value  : [];
+  const socialIncidents = socialResult.status === 'fulfilled' ? socialResult.value : [];
   const geminiIncidents = geminiResult.status === 'fulfilled' ? geminiResult.value : [];
 
   if (rssResult.status    === 'rejected') console.info(`[AiWee/RSS] unavailable: ${(rssResult.reason as any)?.message ?? 'proxy error'}`);
+  if (gdeltResult.status  === 'rejected') console.info(`[AiWee/GDELT] unavailable: ${(gdeltResult.reason as any)?.message ?? 'proxy error'}`);
+  if (feedsResult.status  === 'rejected') console.info(`[AiWee/Feeds] unavailable: ${(feedsResult.reason as any)?.message ?? 'proxy error'}`);
+  if (socialResult.status === 'rejected') console.info(`[AiWee/Social] unavailable: ${(socialResult.reason as any)?.message ?? 'proxy error'}`);
   if (geminiResult.status === 'rejected') {
     const err = geminiResult.reason as any;
     if (err?.status === 429 || err?.message?.includes('quota') || err?.message?.includes('RESOURCE_EXHAUSTED'))
@@ -357,30 +453,64 @@ Aba Road (4.8100, 7.0300), Rumuokoro (4.8654, 7.0222)`,
       console.warn('[AiWee/Gemini]', err?.message ?? err);
   }
 
-  // ── Merge: RSS (real headlines) first, then fill with Gemini ─────────────────
-  const merged: LiveIncident[] = [];
+  // ── Merge real sources, de-duplicated ─────────────────────────────────────────
+  // Editorial sources first so that when the same story appears in both a news
+  // feed and a social post, the news-grade copy (higher confidence, source link)
+  // is the one we keep. Social fills in what newsrooms haven't covered.
+  const candidates = [
+    ...rssIncidents,
+    ...gdeltIncidents,
+    ...feedIncidents,
+    ...geminiIncidents,
+    ...socialIncidents,
+  ].filter((inc) => isRecent(inc.timestamp, RECENCY_DAYS));
 
-  for (const inc of rssIncidents) {
-    if (!isDuplicate(inc, merged)) merged.push(inc);
+  const merged: LiveIncident[] = [];
+  const seenHeadlines = new Set<string>();
+  for (const inc of candidates) {
+    // Primary: same headline across sources (catches the same story reported by
+    // multiple outlets at slightly different coordinates).
+    const fp = (inc.summary || inc.description || "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 55);
+    if (fp && seenHeadlines.has(fp)) continue;
+    // Secondary: same type within ~500 m.
+    if (isDuplicate(inc, merged)) continue;
+    if (fp) seenHeadlines.add(fp);
+    merged.push(inc);
   }
-  for (const inc of geminiIncidents) {
-    if (!isDuplicate(inc, merged)) merged.push(inc);
-  }
+
+  // Freshest first for display
+  merged.sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  );
 
   if (merged.length > 0) {
-    console.log(`[AiWee] ${merged.length} live incidents (${rssIncidents.length} RSS + ${geminiIncidents.length} Gemini)`);
-    return merged.slice(0, 10);
+    console.log(
+      `[AiWee] ${merged.length} live incidents ` +
+        `(${rssIncidents.length} GNews + ${gdeltIncidents.length} GDELT + ${feedIncidents.length} outlets + ${socialIncidents.length} social + ${geminiIncidents.length} Gemini)`,
+    );
+    return merged.slice(0, 20);
   }
 
-  // ── Both failed — curated fallback ───────────────────────────────────────────
-  console.info('[AiWee] Both sources unavailable — using curated Port Harcourt data');
-  const shuffled = [...PH_FALLBACK].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 5).map((inc, i) => ({
-    ...inc,
-    id:        `live-fallback-${Date.now()}-${i}`,
-    source:    'live' as const,
-    timestamp: now,
-  }));
+  // ── No real incidents available ──────────────────────────────────────────────
+  // Honest by default: show nothing rather than fabricated data. Curated sample
+  // incidents are opt-in for demos via VITE_DEMO_MODE=true.
+  if (import.meta.env.VITE_DEMO_MODE === 'true') {
+    console.info('[AiWee] DEMO_MODE — serving curated sample incidents (not live)');
+    const shuffled = [...PH_FALLBACK].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 5).map((inc, i) => ({
+      ...inc,
+      id:        `demo-${Date.now()}-${i}`,
+      source:    'live' as const,
+      timestamp: now,
+    }));
+  }
+
+  console.info('[AiWee] No live incidents from any real source right now.');
+  return [];
 }
 
 

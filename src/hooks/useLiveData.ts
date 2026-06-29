@@ -35,11 +35,11 @@ export function useLiveData() {
     error: null,
   });
 
-  const doFetch = useCallback(async () => {
+  const doFetch = useCallback(async (force = false) => {
     setStatus((prev) => ({ ...prev, state: 'fetching', error: null, newCount: 0 }));
 
     try {
-      const liveIncidents = await fetchLivePortHarcourtIncidents();
+      const liveIncidents = await fetchLivePortHarcourtIncidents({ force });
 
       // Snapshot of current incidents so dedup checks are consistent
       const currentIncidents = useIncidentStore.getState().incidents;
@@ -122,7 +122,8 @@ export function useLiveData() {
   useEffect(() => {
     doFetchRef.current();
 
-    const pollId  = setInterval(() => doFetchRef.current(), POLL_INTERVAL_MS);
+    // Scheduled polls force a fresh network run; mounts/navigations use the cache
+    const pollId  = setInterval(() => doFetchRef.current(true), POLL_INTERVAL_MS);
 
     // Countdown every second
     const countId = setInterval(() => {
@@ -138,5 +139,6 @@ export function useLiveData() {
     };
   }, []); // run once — doFetchRef always points to latest version
 
-  return { status, refresh: () => doFetchRef.current() };
+  // Manual refresh (LiveBadge button) always bypasses the cache
+  return { status, refresh: () => doFetchRef.current(true) };
 }

@@ -41,9 +41,9 @@ const TYPE_COLOR: Record<string, { bg: string; text: string; glow: string }> = {
   },
   Crime: { bg: "bg-pink-500/15", text: "text-pink-400", glow: "bg-pink-500" },
   Medical: {
-    bg: "bg-emerald-500/15",
-    text: "text-emerald-400",
-    glow: "bg-emerald-500",
+    bg: "bg-blue-600/15",
+    text: "text-blue-500",
+    glow: "bg-blue-600",
   },
   Flood: { bg: "bg-cyan-500/15", text: "text-cyan-400", glow: "bg-cyan-500" },
   Other: {
@@ -78,9 +78,9 @@ const ALERT_CFG = {
   },
   INFORMATIONAL: {
     icon: Info,
-    iconBg: "bg-zinc-700",
-    iconColor: "text-zinc-400",
-    labelColor: "text-zinc-400",
+    iconBg: "bg-slate-300",
+    iconColor: "text-slate-500",
+    labelColor: "text-slate-500",
     label: "INFO",
   },
 };
@@ -99,7 +99,7 @@ function getSeverityLabel(score: number) {
     };
   return {
     label: "Low",
-    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    color: "text-blue-500 bg-blue-600/10 border-blue-600/20",
   };
 }
 
@@ -139,7 +139,7 @@ export default function CitizenAlerts() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-[#0B1121]/90 backdrop-blur-xl border-b border-white/6 px-4 py-3.5 shrink-0">
+      <header className="sticky top-0 z-10 bg-slate-100 backdrop-blur-xl border-b border-slate-200 px-4 py-3.5 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative w-9 h-9 bg-linear-to-br from-red-500 to-rose-600 rounded-[10px] flex items-center justify-center shadow-lg shadow-red-500/25 shrink-0">
@@ -148,7 +148,7 @@ export default function CitizenAlerts() {
                 strokeWidth={2.5}
               />
               {unread + liveIncidents.length > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] bg-[#0B1121] rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] bg-white rounded-full flex items-center justify-center">
                   <span className="w-3.5 h-3.5 bg-red-500 rounded-full text-[8px] font-black text-white flex items-center justify-center animate-pulse">
                     {unread + liveIncidents.length > 9
                       ? "9+"
@@ -158,17 +158,17 @@ export default function CitizenAlerts() {
               )}
             </div>
             <div>
-              <h1 className="text-[15px] font-extrabold text-white tracking-tight leading-none">
+              <h1 className="text-[15px] font-extrabold text-slate-900 tracking-tight leading-none">
                 Alerts
               </h1>
-              <p className="text-[9px] text-zinc-500 mt-0.5 font-medium uppercase tracking-wider">
+              <p className="text-[9px] text-slate-500 mt-0.5 font-medium uppercase tracking-wider">
                 Live AI + Crowd · Port Harcourt
               </p>
             </div>
           </div>
 
           {/* Tab toggle */}
-          <div className="flex items-center gap-1 bg-zinc-800/70 border border-white/6 rounded-full p-1">
+          <div className="flex items-center gap-1 bg-slate-200/70 border border-slate-200 rounded-full p-1">
             {(["live", "alerts"] as const).map((t) => (
               <button
                 key={t}
@@ -176,8 +176,8 @@ export default function CitizenAlerts() {
                 className={cn(
                   "px-3.5 py-1.5 rounded-full text-[10px] font-bold transition-all capitalize tracking-wide",
                   tab === t
-                    ? "bg-emerald-500 text-zinc-950 shadow-sm shadow-emerald-500/30"
-                    : "text-zinc-400 hover:text-zinc-200",
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                    : "text-slate-500 hover:text-slate-800",
                 )}
               >
                 {t === "live"
@@ -193,14 +193,14 @@ export default function CitizenAlerts() {
       {tab === "live" ? (
         <main className="flex-1 overflow-y-auto p-4 space-y-3 pb-28">
           {liveIncidents.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-500 space-y-3 animate-fade-in py-16">
-              <div className="w-16 h-16 rounded-full bg-zinc-800/60 flex items-center justify-center">
+            <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3 animate-fade-in py-16">
+              <div className="w-16 h-16 rounded-full bg-slate-200/60 flex items-center justify-center">
                 <Zap className="w-8 h-8 opacity-25" />
               </div>
               <p className="text-sm font-medium">
                 No live AI incidents right now.
               </p>
-              <p className="text-xs text-zinc-600 text-center max-w-xs">
+              <p className="text-xs text-slate-400 text-center max-w-xs">
                 Live incidents from Google News and Gemini AI will appear here
                 automatically.
               </p>
@@ -215,7 +215,7 @@ export default function CitizenAlerts() {
                 <button
                   key={incident.id}
                   onClick={() => navigate(`/citizen?incident=${incident.id}`)}
-                  className="w-full text-left relative bg-[#0B1121]/60 backdrop-blur-xl border border-white/4 rounded-[24px] p-5 space-y-3 animate-slide-up hover:border-white/8 hover:bg-[#0B1121]/80 transition-all active:scale-[0.98] overflow-hidden shadow-xl group"
+                  className="w-full text-left relative bg-slate-100 backdrop-blur-xl border border-slate-200 rounded-[24px] p-5 space-y-3 animate-slide-up hover:border-slate-200 hover:bg-slate-100 transition-all active:scale-[0.98] overflow-hidden shadow-xl group"
                   style={{ animationDelay: `${idx * 0.05}s` }}
                 >
                   {/* Ambient glow */}
@@ -231,7 +231,7 @@ export default function CitizenAlerts() {
                     <div className="flex items-center gap-2.5">
                       <div
                         className={cn(
-                          "w-9 h-9 rounded-[10px] flex items-center justify-center border border-white/5",
+                          "w-9 h-9 rounded-[10px] flex items-center justify-center border border-slate-200",
                           colors.bg,
                         )}
                       >
@@ -243,7 +243,7 @@ export default function CitizenAlerts() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={cn(
-                            "px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/5",
+                            "px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-200",
                             colors.bg,
                             colors.text,
                           )}
@@ -263,7 +263,7 @@ export default function CitizenAlerts() {
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] text-zinc-500 font-bold flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] text-slate-500 font-bold flex items-center gap-1 shrink-0">
                       <Clock className="w-3 h-3" />
                       {formatDistanceToNow(new Date(incident.timestamp), {
                         addSuffix: true,
@@ -272,13 +272,13 @@ export default function CitizenAlerts() {
                   </div>
 
                   {/* Summary */}
-                  <p className="text-zinc-200 text-sm leading-relaxed relative z-10 font-medium">
+                  <p className="text-slate-800 text-sm leading-relaxed relative z-10 font-medium">
                     {incident.summary || incident.description}
                   </p>
 
                   {/* Confidence bar */}
-                  <div className="space-y-1.5 relative z-10 bg-white/2 p-2.5 rounded-xl border border-white/2">
-                    <div className="flex justify-between text-[9px] text-zinc-500 font-bold uppercase tracking-widest">
+                  <div className="space-y-1.5 relative z-10 bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+                    <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase tracking-widest">
                       <span>AI Confidence</span>
                       <span
                         style={{
@@ -293,7 +293,7 @@ export default function CitizenAlerts() {
                         {incident.confidenceScore}%
                       </span>
                     </div>
-                    <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
@@ -310,12 +310,12 @@ export default function CitizenAlerts() {
                   </div>
 
                   {/* Meta row */}
-                  <div className="flex items-center justify-between pt-1 border-t border-white/[0.04] relative z-10">
-                    <span className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-bold">
-                      <MapPin className="w-3 h-3 text-zinc-500" />
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200 relative z-10">
+                    <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">
+                      <MapPin className="w-3 h-3 text-slate-500" />
                       {incident.cues[0] ?? "Port Harcourt"}
                     </span>
-                    <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold">
+                    <span className="flex items-center gap-1.5 text-[10px] text-blue-500 font-bold">
                       View on map <ChevronRight className="w-3 h-3" />
                     </span>
                   </div>
@@ -328,14 +328,14 @@ export default function CitizenAlerts() {
         /* ── ALERTS TAB — crowd-sourced alerts ────────────────────────────── */
         <main className="flex-1 overflow-y-auto p-4 space-y-3 pb-28">
           {visibleAlerts.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-zinc-500 space-y-3 animate-fade-in py-16">
-              <div className="w-16 h-16 rounded-full bg-zinc-800/60 flex items-center justify-center">
+            <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-3 animate-fade-in py-16">
+              <div className="w-16 h-16 rounded-full bg-slate-200/60 flex items-center justify-center">
                 <Bell className="w-8 h-8 opacity-25" />
               </div>
               <p className="text-sm font-medium">
                 No active alerts in your area.
               </p>
-              <p className="text-xs text-zinc-600 text-center max-w-xs">
+              <p className="text-xs text-slate-400 text-center max-w-xs">
                 You'll be notified when incidents near you are verified by the
                 crowd.
               </p>
@@ -355,7 +355,7 @@ export default function CitizenAlerts() {
                 <div
                   key={alert.id}
                   className={cn(
-                    "relative bg-[#0B1121]/60 backdrop-blur-xl border border-white/[0.04] rounded-[24px] p-5 space-y-3.5 animate-slide-up overflow-hidden shadow-xl",
+                    "relative bg-slate-100 backdrop-blur-xl border border-slate-200 rounded-[24px] p-5 space-y-3.5 animate-slide-up overflow-hidden shadow-xl",
                     alert.read && "opacity-60 saturate-50",
                   )}
                   style={{ animationDelay: `${idx * 0.07}s` }}
@@ -371,7 +371,7 @@ export default function CitizenAlerts() {
                   {/* Dismiss */}
                   <button
                     onClick={() => dismissAlert(alert.id)}
-                    className="absolute top-4 right-4 text-zinc-600 hover:text-zinc-300 transition-colors z-10"
+                    className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition-colors z-10"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -380,7 +380,7 @@ export default function CitizenAlerts() {
                   <div className="flex items-center gap-3 pr-6 relative z-10">
                     <div
                       className={cn(
-                        "w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 border border-white/5",
+                        "w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 border border-slate-200",
                         cfg.iconBg,
                       )}
                     >
@@ -403,7 +403,7 @@ export default function CitizenAlerts() {
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
                         )}
                       </div>
-                      <span className="text-[10px] text-zinc-500 font-medium">
+                      <span className="text-[10px] text-slate-500 font-medium">
                         {formatDistanceToNow(new Date(alert.timestamp), {
                           addSuffix: true,
                         })}
@@ -412,22 +412,22 @@ export default function CitizenAlerts() {
                   </div>
 
                   {/* Message */}
-                  <p className="text-zinc-200 text-sm leading-relaxed relative z-10 font-medium">
+                  <p className="text-slate-800 text-sm leading-relaxed relative z-10 font-medium">
                     {alert.message}
                   </p>
 
                   {/* Meta row */}
-                  <div className="flex items-center gap-3 relative z-10 pt-1 border-t border-white/[0.04]">
-                    <span className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-bold">
-                      <MapPin className="w-3 h-3 text-zinc-500" /> {location}
+                  <div className="flex items-center gap-3 relative z-10 pt-1 border-t border-slate-200">
+                    <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">
+                      <MapPin className="w-3 h-3 text-slate-500" /> {location}
                     </span>
-                    <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                    <span className="text-[10px] text-zinc-400 font-bold">
+                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                    <span className="text-[10px] text-slate-500 font-bold">
                       {status}
                     </span>
-                    <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                    <span className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-bold">
-                      <Users className="w-3 h-3 text-zinc-500" /> {reporters}{" "}
+                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                    <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">
+                      <Users className="w-3 h-3 text-slate-500" /> {reporters}{" "}
                       report{reporters !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -440,8 +440,8 @@ export default function CitizenAlerts() {
                           className={cn(
                             "h-11 px-3 rounded-2xl text-xs font-bold flex items-center gap-2 border",
                             myVote === "yes"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                              : "bg-zinc-800/40 text-zinc-400 border-zinc-700/50",
+                              ? "bg-blue-600/10 text-blue-500 border-blue-600/20"
+                              : "bg-slate-200/40 text-slate-500 border-slate-300/50",
                           )}
                         >
                           {myVote === "yes" ? (
@@ -461,7 +461,7 @@ export default function CitizenAlerts() {
                             onClick={() =>
                               handleVote(alert.id, alert.incidentId, "yes")
                             }
-                            className="flex-1 h-11 flex items-center justify-center gap-1.5 bg-linear-to-tr from-emerald-500/10 to-emerald-400/5 text-emerald-400 border border-emerald-500/20 rounded-2xl text-[11px] font-black tracking-wide hover:bg-emerald-500/20 active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/5"
+                            className="flex-1 h-11 flex items-center justify-center gap-1.5 bg-linear-to-tr from-blue-600/10 to-blue-500/5 text-blue-500 border border-blue-600/20 rounded-2xl text-[11px] font-black tracking-wide hover:bg-blue-600/20 active:scale-[0.98] transition-all shadow-lg shadow-blue-600/5"
                           >
                             <Check className="w-4 h-4" /> YES, I SEE IT
                           </button>
@@ -469,7 +469,7 @@ export default function CitizenAlerts() {
                             onClick={() =>
                               handleVote(alert.id, alert.incidentId, "no")
                             }
-                            className="flex-1 h-11 flex items-center justify-center gap-1.5 bg-zinc-800/40 text-zinc-300 border border-zinc-700/50 rounded-2xl text-[11px] font-black tracking-wide hover:bg-zinc-700/60 active:scale-[0.98] transition-all"
+                            className="flex-1 h-11 flex items-center justify-center gap-1.5 bg-slate-200/40 text-slate-700 border border-slate-300/50 rounded-2xl text-[11px] font-black tracking-wide hover:bg-slate-300/60 active:scale-[0.98] transition-all"
                           >
                             <X className="w-4 h-4" /> NO
                           </button>
@@ -488,7 +488,7 @@ export default function CitizenAlerts() {
                             : "/citizen",
                         )
                       }
-                      className="relative z-10 flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-white font-bold transition-colors pt-1"
+                      className="relative z-10 flex items-center gap-1.5 text-[10px] text-slate-500 hover:text-slate-900 font-bold transition-colors pt-1"
                     >
                       View on map <ChevronRight className="w-3 h-3" />
                     </button>

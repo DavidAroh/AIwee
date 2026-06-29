@@ -42,25 +42,25 @@ if (typeof document !== 'undefined') {
         100% { transform: scale(2.8); opacity: 0;   }
       }
       .aiwee-popup .leaflet-popup-content-wrapper {
-        background: #0f172a;
-        border: 1px solid #1e293b;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 14px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        box-shadow: 0 8px 32px rgba(15,23,42,0.18);
         padding: 0;
         overflow: hidden;
       }
       .aiwee-popup .leaflet-popup-tip-container { display: none; }
       .aiwee-popup .leaflet-popup-content { margin: 0; }
       .aiwee-popup .leaflet-popup-close-button {
-        color: #475569 !important;
+        color: #94a3b8 !important;
         font-size: 18px !important;
         top: 8px !important;
         right: 10px !important;
       }
       .leaflet-control-scale-line {
-        background: rgba(15,23,42,0.85) !important;
-        border-color: #334155 !important;
-        color: #94a3b8 !important;
+        background: rgba(255,255,255,0.9) !important;
+        border-color: #cbd5e1 !important;
+        color: #475569 !important;
         font-size: 10px !important;
         padding: 2px 6px !important;
         border-radius: 4px !important;
@@ -115,7 +115,7 @@ function createMarkerIcon(type: string, severity: number, isLive: boolean) {
         position:absolute;
         top:0;
         left:50%;transform:translateX(-50%);
-        background:rgba(16,185,129,0.95);
+        background:rgba(37,99,235,0.95);
         color:#fff;
         font:800 8.5px/1 Inter,sans-serif;
         letter-spacing:.08em;
@@ -213,14 +213,14 @@ function ZoomControls({ userLocation }: { userLocation?: [number, number] | null
   const btnStyle: React.CSSProperties = {
     width: 30,
     height: 30,
-    background: 'rgba(15,23,42,0.88)',
-    border: '1px solid #334155',
+    background: 'rgba(255,255,255,0.92)',
+    border: '1px solid #cbd5e1',
     borderRadius: 7,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#cbd5e1',
+    color: '#334155',
     fontSize: 18,
     lineHeight: 1,
     backdropFilter: 'blur(6px)',
@@ -230,15 +230,15 @@ function ZoomControls({ userLocation }: { userLocation?: [number, number] | null
     <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: 5 }}>
       <button
         style={btnStyle}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#1e293b')}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(15,23,42,0.88)')}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9')}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.92)')}
         onClick={() => map.zoomIn()}
         title="Zoom in"
       >+</button>
       <button
         style={btnStyle}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#1e293b')}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(15,23,42,0.88)')}
+        onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9')}
+        onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.92)')}
         onClick={() => map.zoomOut()}
         title="Zoom out"
       >−</button>
@@ -280,7 +280,7 @@ function buildPopup(inc: ReturnType<typeof useIncidentStore.getState>['incidents
       </div>
       <p style="font-size:11.5px;color:#94a3b8;line-height:1.5;margin:0 0 8px">${text}${text.length === 130 ? '…' : ''}</p>
       <div style="margin-bottom:7px">${cues}</div>
-      <div style="background:#0f172a;border-radius:3px;height:3px;overflow:hidden;margin-bottom:4px">
+      <div style="background:#e2e8f0;border-radius:3px;height:3px;overflow:hidden;margin-bottom:4px">
         <div style="height:100%;width:${inc.confidenceScore}%;background:${confColor};transition:width .5s"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font:600 9px/1 Inter;color:#475569">
@@ -355,7 +355,7 @@ export default function MapView({
         minZoom={11}               // prevent zooming out to escape bounds
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           maxZoom={19}
         />
 

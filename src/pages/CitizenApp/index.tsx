@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { Home, Plus, Bell, User } from "lucide-react";
+import { Home, Bell, User } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useIncidentStore } from "../../store/useIncidentStore";
 import { useLiveData } from "../../hooks/useLiveData";
@@ -24,8 +24,6 @@ export default function CitizenApp() {
       ? location.pathname === path
       : location.pathname.startsWith(path);
 
-  const isReport = isActive("/citizen/report");
-
   // Each regular nav item
   const NAV_ITEMS = [
     { path: "/citizen", icon: Home, label: "Home" },
@@ -34,10 +32,10 @@ export default function CitizenApp() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex justify-center">
-      <div className="w-full max-w-md bg-[#0B1121] min-h-screen phone-shadow relative flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-white flex justify-center">
+      <div className="w-full max-w-md bg-white min-h-screen phone-shadow relative flex flex-col overflow-hidden">
         {/* Page content */}
-        <div className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto scrollbar-hide">
           <Routes>
             <Route path="/" element={<CitizenHome />} />
             <Route path="/report" element={<CitizenReport />} />
@@ -47,57 +45,23 @@ export default function CitizenApp() {
         </div>
 
         {/* ── Floating Island Bottom Nav ──────────────────────────────────────── */}
-        <nav className="fixed bottom-6 lg:bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md z-50 flex justify-center pointer-events-none px-4">
-          <div className="bg-[#0B1121]/80 backdrop-blur-2xl border border-white/10 rounded-full p-1.5 shadow-2xl pointer-events-auto flex items-center gap-1.5">
+        <nav className="fixed bottom-6 lg:bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md z-[5000] flex justify-center pointer-events-none px-4">
+          <div className="bg-slate-100 backdrop-blur-2xl border border-slate-200 rounded-full p-1.5 shadow-2xl pointer-events-auto flex items-center gap-1.5">
             {/* Regular Nav Items Mapped */}
-            {NAV_ITEMS.map(({ path, icon: Icon, label }, index) => {
+            {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
               // Special case for Alerts badge
               const isAlerts = path === "/citizen/alerts";
               const active = isActive(path);
 
-              // We render Report button in the middle (after Home & Alerts)
-              const renderReport = index === 2;
-
               return (
                 <React.Fragment key={path}>
-                  {renderReport && (
-                    <Link
-                      to="/citizen/report"
-                      className={cn(
-                        "flex items-center justify-center gap-2 h-12 rounded-full transition-all duration-300 active:scale-95",
-                        isReport
-                          ? "px-5 bg-zinc-800 shadow-inner border border-zinc-700/50"
-                          : "px-5 bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-lg shadow-emerald-500/20",
-                      )}
-                    >
-                      <Plus
-                        size={20}
-                        strokeWidth={3}
-                        className={cn(
-                          "transition-transform duration-300",
-                          isReport
-                            ? "rotate-45 text-emerald-400"
-                            : "text-zinc-950",
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          "font-bold text-sm tracking-wide",
-                          isReport ? "text-emerald-400" : "text-zinc-950",
-                        )}
-                      >
-                        Report
-                      </span>
-                    </Link>
-                  )}
-
                   <Link
                     to={path}
                     className={cn(
                       "relative flex items-center justify-center h-12 transition-all duration-500 ease-out rounded-full overflow-hidden",
                       active
-                        ? "px-[18px] bg-zinc-800/80"
-                        : "w-12 hover:bg-zinc-800/40",
+                        ? "px-[18px] bg-slate-200/80"
+                        : "w-12 hover:bg-slate-200/40",
                     )}
                   >
                     <Icon
@@ -105,7 +69,7 @@ export default function CitizenApp() {
                       strokeWidth={active ? 2.5 : 2}
                       className={cn(
                         "shrink-0 transition-colors",
-                        active ? "text-emerald-400" : "text-zinc-400",
+                        active ? "text-blue-500" : "text-slate-500",
                       )}
                     />
 
@@ -118,7 +82,7 @@ export default function CitizenApp() {
                           : "max-w-0 opacity-0 ml-0",
                       )}
                     >
-                      <span className="text-sm font-bold text-white whitespace-nowrap">
+                      <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
                         {label}
                       </span>
                     </div>

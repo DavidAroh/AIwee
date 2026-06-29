@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera,
   MapPin,
   UploadCloud,
   CheckCircle2,
-  AlertTriangle,
+  CloudOff,
   X,
   ChevronRight,
   Zap,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useIncidentStore } from "../../store/useIncidentStore";
 import { analyzeIncident } from "../../services/ai";
+import { enqueueReport } from "../../services/reportQueue";
 import { cn } from "../../lib/utils";
 
 const QUICK_TYPES = [
@@ -53,11 +54,25 @@ export default function CitizenReport() {
   const [image, setImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stage, setStage] = useState<
-    "form" | "analyzing" | "success" | "error"
+    "form" | "analyzing" | "success" | "queued"
   >("form");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null,
   );
+  const [online, setOnline] = useState(
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
+
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,21 +88,47 @@ export default function CitizenReport() {
     if (!fullDesc.trim()) return;
 
     setIsSubmitting(true);
-    setStage("analyzing");
 
+    // Resolve GPS first — geolocation works even without a network connection.
+    let lat = 4.8156,
+      lng = 7.0498;
     try {
-      let lat = 4.8156,
-        lng = 7.0498;
-      try {
-        const pos = await new Promise<GeolocationPosition>((res, rej) =>
-          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }),
-        );
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
-      } catch {
-        /* use defaults */
-      }
+      const pos = await new Promise<GeolocationPosition>((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }),
+      );
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch {
+      /* use defaults */
+    }
 
+    const incidentId = `inc-${Date.now()}`;
+
+    // Persist the report so it is never lost — drained by useReportSync once
+    // connectivity / the AI service is available.
+    const queueIt = () => {
+      enqueueReport({
+        id: incidentId,
+        description: fullDesc,
+        quickType,
+        image: image || undefined,
+        latitude: lat,
+        longitude: lng,
+        createdAt: new Date().toISOString(),
+        attempts: 0,
+      });
+      setStage("queued");
+      setIsSubmitting(false);
+    };
+
+    // Offline → queue immediately and skip the AI spinner.
+    if (!navigator.onLine) {
+      queueIt();
+      return;
+    }
+
+    setStage("analyzing");
+    try {
       let base64Data: string | undefined;
       let mimeType: string | undefined;
       if (image) {
@@ -106,6 +147,7 @@ export default function CitizenReport() {
       setAnalysisResult(analysis as AnalysisResult);
 
       addIncident({
+        _id: incidentId,
         type: analysis.incidentType as any,
         description: fullDesc,
         latitude: lat,
@@ -123,9 +165,9 @@ export default function CitizenReport() {
       setStage("success");
       setIsSubmitting(false);
     } catch (err) {
+      // AI busy/unreachable — the report is genuinely saved & will be retried.
       console.error(err);
-      setStage("error");
-      setIsSubmitting(false);
+      queueIt();
     }
   };
 
@@ -134,21 +176,21 @@ export default function CitizenReport() {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-6 animate-fade-in">
         <div className="relative w-24 h-24">
-          <div className="absolute inset-0 rounded-full border-2 border-emerald-500/30 animate-ping-slow" />
-          <div className="relative w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/25">
-            <Zap className="w-10 h-10 text-emerald-400 animate-pulse" />
+          <div className="absolute inset-0 rounded-full border-2 border-blue-600/30 animate-ping-slow" />
+          <div className="relative w-24 h-24 bg-blue-600/10 rounded-full flex items-center justify-center border border-blue-600/25">
+            <Zap className="w-10 h-10 text-blue-500 animate-pulse" />
           </div>
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-extrabold text-white">AI Analyzing…</h2>
-          <p className="text-zinc-400 text-sm max-w-xs">
+          <h2 className="text-xl font-extrabold text-slate-900">AI Analyzing…</h2>
+          <p className="text-slate-500 text-sm max-w-xs">
             Classifying incident type, extracting severity cues, and scoring
             confidence using Gemini AI.
           </p>
         </div>
-        <div className="w-48 h-1 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="w-48 h-1 bg-slate-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-emerald-500 rounded-full animate-shimmer"
+            className="h-full bg-blue-600 rounded-full animate-shimmer"
             style={{ backgroundSize: "200% 100%" }}
           />
         </div>
@@ -178,26 +220,26 @@ export default function CitizenReport() {
           {/* Success icon */}
           <div className="flex flex-col items-center pt-4 pb-2 space-y-4">
             <div className="relative w-20 h-20">
-              <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping-slow" />
-              <div className="relative w-20 h-20 bg-emerald-500/15 rounded-full flex items-center justify-center border border-emerald-500/30">
-                <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+              <div className="absolute inset-0 rounded-full bg-blue-600/20 animate-ping-slow" />
+              <div className="relative w-20 h-20 bg-blue-600/15 rounded-full flex items-center justify-center border border-blue-600/30">
+                <CheckCircle2 className="w-10 h-10 text-blue-500" />
               </div>
             </div>
             <div className="text-center space-y-1">
-              <h2 className="text-xl font-extrabold text-white">
+              <h2 className="text-xl font-extrabold text-slate-900">
                 Report Submitted
               </h2>
-              <p className="text-zinc-400 text-xs">
+              <p className="text-slate-500 text-xs">
                 Anonymous · GPS attached · Sent for crowd verification
               </p>
             </div>
           </div>
 
           {/* AI analysis card */}
-          <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-2xl p-4 space-y-4">
+          <div className="bg-slate-200/60 border border-slate-300/40 rounded-2xl p-4 space-y-4">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+              <Zap className="w-4 h-4 text-blue-500" />
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                 AI Analysis Results
               </h3>
             </div>
@@ -227,19 +269,19 @@ export default function CitizenReport() {
             </div>
 
             {/* Summary */}
-            <p className="text-zinc-300 text-sm leading-relaxed">
+            <p className="text-slate-700 text-sm leading-relaxed">
               {analysisResult.summary}
             </p>
 
             {/* Confidence */}
             <div className="space-y-1.5">
-              <div className="flex justify-between text-[9px] text-zinc-500 uppercase tracking-wider font-semibold">
+              <div className="flex justify-between text-[9px] text-slate-500 uppercase tracking-wider font-semibold">
                 <span>AI Confidence</span>
                 <span style={{ color: confColor }}>
                   {analysisResult.confidenceScore}%
                 </span>
               </div>
-              <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
+              <div className="h-2 bg-slate-300 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{
@@ -256,7 +298,7 @@ export default function CitizenReport() {
                 {analysisResult.cues.map((c) => (
                   <span
                     key={c}
-                    className="bg-zinc-900 border border-zinc-700 text-zinc-400 text-[9px] font-semibold px-2 py-0.5 rounded-md"
+                    className="bg-slate-100 border border-slate-300 text-slate-500 text-[9px] font-semibold px-2 py-0.5 rounded-md"
                   >
                     {c}
                   </span>
@@ -269,17 +311,17 @@ export default function CitizenReport() {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-blue-500/8 border border-blue-500/20 rounded-xl p-3 text-center space-y-1">
               <Users className="w-5 h-5 text-blue-400 mx-auto" />
-              <p className="text-[10px] text-zinc-400 font-medium">
+              <p className="text-[10px] text-slate-500 font-medium">
                 Sent to citizens
               </p>
               <p className="text-xs font-bold text-blue-400">within 2 km</p>
             </div>
-            <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl p-3 text-center space-y-1">
-              <Shield className="w-5 h-5 text-emerald-400 mx-auto" />
-              <p className="text-[10px] text-zinc-400 font-medium">
+            <div className="bg-blue-600/8 border border-blue-600/20 rounded-xl p-3 text-center space-y-1">
+              <Shield className="w-5 h-5 text-blue-500 mx-auto" />
+              <p className="text-[10px] text-slate-500 font-medium">
                 Auto-verifies at
               </p>
-              <p className="text-xs font-bold text-emerald-400">
+              <p className="text-xs font-bold text-blue-500">
                 3 confirmations
               </p>
             </div>
@@ -287,7 +329,7 @@ export default function CitizenReport() {
 
           <button
             onClick={() => navigate("/citizen")}
-            className="w-full py-3.5 rounded-xl bg-emerald-500 text-zinc-950 font-bold text-sm hover:bg-emerald-400 active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 active:scale-[0.98] transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2"
           >
             View on Map <ChevronRight className="w-4 h-4" />
           </button>
@@ -299,7 +341,7 @@ export default function CitizenReport() {
               setImage(null);
               setIsSubmitting(false);
             }}
-            className="w-full py-3 rounded-xl bg-zinc-800 text-zinc-300 font-bold text-sm hover:bg-zinc-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-300 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             Report Another Incident
           </button>
@@ -308,28 +350,42 @@ export default function CitizenReport() {
     );
   }
 
-  // ── Error state ───────────────────────────────────────────────────────────
-  if (stage === "error") {
+  // ── Queued (offline / AI busy) ────────────────────────────────────────────
+  if (stage === "queued") {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-5 animate-fade-in">
-        <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
-          <AlertTriangle className="w-10 h-10 text-red-400" />
+        <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/20">
+          <CloudOff className="w-10 h-10 text-amber-500" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-extrabold text-white">
-            Analysis Unavailable
-          </h2>
-          <p className="text-zinc-400 text-sm">
-            The AI service is temporarily busy. Your report was still submitted
-            successfully, but without detailed analysis. Please try again
-            shortly.
+          <h2 className="text-xl font-extrabold text-slate-900">Report Saved</h2>
+          <p className="text-slate-500 text-sm max-w-xs">
+            {online
+              ? "The AI service is busy right now. Your report is saved on this device and will be analysed and posted automatically — no need to resend."
+              : "You're offline. Your report is saved on this device and will be sent automatically the moment you're back online."}
           </p>
         </div>
+        <div className="flex items-center gap-2 text-[11px] font-bold text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+          Pending sync
+        </div>
         <button
-          onClick={() => setStage("form")}
-          className="w-full max-w-[200px] py-3 rounded-xl bg-zinc-700 text-zinc-200 font-bold text-sm hover:bg-zinc-600 transition-all"
+          onClick={() => navigate("/citizen")}
+          className="w-full max-w-[240px] py-3.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 active:scale-[0.98] transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2"
         >
-          Try Again
+          Back to Map <ChevronRight className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => {
+            setStage("form");
+            setDescription("");
+            setQuickType("");
+            setImage(null);
+            setIsSubmitting(false);
+          }}
+          className="w-full max-w-[240px] py-3 rounded-xl bg-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-300 active:scale-[0.98] transition-all"
+        >
+          Report Another Incident
         </button>
       </div>
     );
@@ -338,7 +394,7 @@ export default function CitizenReport() {
   // ── Report form ───────────────────────────────────────────────────────────
   return (
     <div className="h-full flex flex-col">
-      <header className="sticky top-0 z-10 bg-[#0B1121]/90 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3.5">
+      <header className="sticky top-0 z-10 bg-slate-100 backdrop-blur-xl border-b border-slate-200 px-4 py-3.5">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-gradient-to-br from-orange-400 to-red-500 rounded-[10px] flex items-center justify-center shadow-lg shadow-orange-500/25 shrink-0">
             <UploadCloud
@@ -347,10 +403,10 @@ export default function CitizenReport() {
             />
           </div>
           <div>
-            <h1 className="text-[15px] font-extrabold text-white tracking-tight leading-none">
+            <h1 className="text-[15px] font-extrabold text-slate-900 tracking-tight leading-none">
               Report Incident
             </h1>
-            <p className="text-[9px] text-zinc-500 mt-0.5 font-medium uppercase tracking-wider">
+            <p className="text-[9px] text-slate-500 mt-0.5 font-medium uppercase tracking-wider">
               Anonymous · GPS auto-attached · AI-analysis
             </p>
           </div>
@@ -361,7 +417,7 @@ export default function CitizenReport() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Incident type grid */}
           <div className="space-y-2.5">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
               Incident Type
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -379,7 +435,7 @@ export default function CitizenReport() {
                       "py-3 px-2 rounded-2xl text-xs font-bold border transition-all duration-200 text-center flex flex-col items-center gap-1",
                       isSelected
                         ? "scale-[0.97]"
-                        : "bg-zinc-800/60 text-zinc-400 border-zinc-700/60 hover:border-zinc-500 hover:bg-zinc-800",
+                        : "bg-slate-200/60 text-slate-500 border-slate-300/60 hover:border-slate-500 hover:bg-slate-200",
                     )}
                     style={
                       isSelected
@@ -401,16 +457,16 @@ export default function CitizenReport() {
           </div>
 
           {/* GPS row */}
-          <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-2xl px-4 py-3 flex items-center gap-3">
+          <div className="bg-blue-600/8 border border-blue-600/20 rounded-2xl px-4 py-3 flex items-center gap-3">
             <div className="relative shrink-0">
-              <MapPin className="w-4 h-4 text-emerald-400" />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping opacity-75" />
+              <MapPin className="w-4 h-4 text-blue-500" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full animate-ping opacity-75" />
             </div>
             <div>
-              <p className="text-xs font-bold text-emerald-300">
+              <p className="text-xs font-bold text-blue-400">
                 GPS Location Auto-Attached
               </p>
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <p className="text-[10px] text-slate-500 mt-0.5">
                 Coordinates shared anonymously for verification only.
               </p>
             </div>
@@ -418,7 +474,7 @@ export default function CitizenReport() {
 
           {/* Description textarea */}
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
               What happened? <span className="text-red-400 font-black">*</span>
             </label>
             <textarea
@@ -426,25 +482,25 @@ export default function CitizenReport() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the incident — vehicle type, number of people, visible hazards, time it started…"
               className={cn(
-                "w-full h-32 bg-zinc-900/70 border rounded-2xl p-4 text-sm text-white placeholder:text-zinc-600 focus:outline-none resize-none transition-all duration-300",
+                "w-full h-32 bg-slate-100/70 border rounded-2xl p-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none resize-none transition-all duration-300",
                 description.length > 0
-                  ? "border-emerald-500/40 ring-1 ring-emerald-500/20 focus:ring-2 focus:ring-emerald-500/25"
-                  : "border-zinc-700/60 focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20",
+                  ? "border-blue-600/40 ring-1 ring-blue-600/20 focus:ring-2 focus:ring-blue-600/25"
+                  : "border-slate-300/60 focus:border-blue-600/40 focus:ring-1 focus:ring-blue-600/20",
               )}
               required
             />
-            <p className="text-[10px] text-zinc-600 text-right">
+            <p className="text-[10px] text-slate-400 text-right">
               {description.length} chars
             </p>
           </div>
 
           {/* Media upload */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Evidence (Optional)
             </label>
             {image ? (
-              <div className="relative rounded-xl overflow-hidden border border-zinc-700/60">
+              <div className="relative rounded-xl overflow-hidden border border-slate-300/60">
                 <img
                   src={image}
                   alt="Evidence"
@@ -453,17 +509,17 @@ export default function CitizenReport() {
                 <button
                   type="button"
                   onClick={() => setImage(null)}
-                  className="absolute top-2 right-2 glass p-1.5 rounded-full text-zinc-300 hover:text-white transition-colors"
+                  className="absolute top-2 right-2 glass p-1.5 rounded-full text-slate-700 hover:text-slate-900 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
                 <div className="absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-black/60 to-transparent" />
-                <p className="absolute bottom-2 left-3 text-[10px] text-zinc-300 font-semibold">
+                <p className="absolute bottom-2 left-3 text-[10px] text-slate-700 font-semibold">
                   Photo attached — AI will analyse it
                 </p>
               </div>
             ) : (
-              <label className="w-full h-28 border-2 border-dashed border-zinc-700 rounded-xl flex flex-col items-center justify-center gap-2 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/20 transition-all cursor-pointer">
+              <label className="w-full h-28 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-slate-700 hover:border-slate-400 hover:bg-slate-200/20 transition-all cursor-pointer">
                 <Camera className="w-7 h-7" />
                 <span className="text-xs font-semibold">
                   Tap to upload photo or video
@@ -478,6 +534,16 @@ export default function CitizenReport() {
             )}
           </div>
 
+          {!online && (
+            <div className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl px-4 py-3">
+              <CloudOff className="w-4 h-4 text-amber-600 shrink-0" />
+              <p className="text-[11px] text-amber-700 font-medium leading-snug">
+                You're offline. Your report will be saved and sent
+                automatically when you reconnect.
+              </p>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={isSubmitting || !description.trim()}
@@ -485,16 +551,22 @@ export default function CitizenReport() {
             className={cn(
               "w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all",
               isSubmitting || !description.trim()
-                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                : "bg-emerald-500 text-zinc-950 hover:bg-emerald-400 active:scale-[0.98] shadow-lg shadow-emerald-500/25",
+                ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                : online
+                  ? "bg-blue-600 text-white hover:bg-blue-500 active:scale-[0.98] shadow-lg shadow-blue-600/25"
+                  : "bg-amber-500 text-white hover:bg-amber-400 active:scale-[0.98] shadow-lg shadow-amber-500/25",
             )}
           >
-            <UploadCloud className="w-4 h-4" />
-            Submit Report
+            {online ? (
+              <UploadCloud className="w-4 h-4" />
+            ) : (
+              <CloudOff className="w-4 h-4" />
+            )}
+            {online ? "Submit Report" : "Save Report Offline"}
             <ChevronRight className="w-4 h-4" />
           </button>
 
-          <p className="text-center text-[10px] text-zinc-600 pb-2">
+          <p className="text-center text-[10px] text-slate-400 pb-2">
             Anonymous report · No personal data stored · Location cannot be
             edited (anti-spoofing)
           </p>
