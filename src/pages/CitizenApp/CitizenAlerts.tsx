@@ -26,7 +26,7 @@ import { useNavigate } from "react-router-dom";
 const TYPE_ICON: Record<string, typeof Flame> = {
   Fire: Flame,
   Accident: Car,
-  Flood: Droplets,
+  "Natural Disaster": Droplets,
   Medical: Heart,
   Crime: Shield,
   Other: AlertTriangle,
@@ -45,7 +45,7 @@ const TYPE_COLOR: Record<string, { bg: string; text: string; glow: string }> = {
     text: "text-blue-500",
     glow: "bg-blue-600",
   },
-  Flood: { bg: "bg-cyan-500/15", text: "text-cyan-400", glow: "bg-cyan-500" },
+  "Natural Disaster": { bg: "bg-cyan-500/15", text: "text-cyan-400", glow: "bg-cyan-500" },
   Other: {
     bg: "bg-violet-500/15",
     text: "text-violet-400",

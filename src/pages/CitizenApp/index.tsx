@@ -4,6 +4,8 @@ import { Home, Bell, User } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useIncidentStore } from "../../store/useIncidentStore";
 import { useLiveData } from "../../hooks/useLiveData";
+import { useBackendSync } from "../../hooks/useBackendSync";
+import { SosSystem } from "../../components/sos/SosSystem";
 import CitizenHome from "./CitizenHome";
 import CitizenReport from "./CitizenReport";
 import CitizenAlerts from "./CitizenAlerts";
@@ -12,6 +14,8 @@ import CitizenProfile from "./CitizenProfile";
 export default function CitizenApp() {
   // Fetch live data at the app-layout level so it runs on ALL pages
   useLiveData();
+  // Live incidents + SOS from Supabase (no-op when backend not configured)
+  useBackendSync();
   const location = useLocation();
   const alerts = useIncidentStore((s) => s.alerts);
   const dismissedAlerts = useIncidentStore((s) => s.dismissedAlerts);
@@ -34,6 +38,8 @@ export default function CitizenApp() {
   return (
     <div className="min-h-screen bg-white flex justify-center">
       <div className="w-full max-w-md bg-white min-h-screen phone-shadow relative flex flex-col overflow-hidden">
+        {/* SOS: safety-timer watcher + active-emergency overlay (all tabs) */}
+        <SosSystem />
         {/* Page content */}
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           <Routes>

@@ -9,7 +9,7 @@ import { Zap, Users, Shield, TrendingUp, Clock, BarChart2, Activity } from 'luci
 
 const TYPE_COLORS: Record<string, string> = {
   Fire: '#ef4444', Accident: '#f59e0b', Crime: '#ec4899',
-  Medical: '#2563eb', Flood: '#06b6d4', Other: '#8b5cf6',
+  Medical: '#2563eb', "Natural Disaster": '#06b6d4', Other: '#8b5cf6',
 };
 
 export default function Intel() {

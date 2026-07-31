@@ -1,8 +1,23 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-paper: #ffffff;
+  --color-paper-deep: #f8fafc;
+  --color-ink: #0f172a;
+  --color-ink-soft: #475569;
+  --color-ink-mute: #94a3b8;
+  --color-signal: #2563eb;
+  --color-signal-deep: #1d4ed8;
+  --color-verified: #2563eb;
+}
+
 :root {
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
@@ -11,6 +26,10 @@
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
@@ -27,6 +46,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: #e2e8f0;
   color: #0f172a;
+}
+
+::selection {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────── */
@@ -148,6 +172,23 @@ body {
     transform: rotate(360deg) translateX(60px) rotate(-360deg);
   }
 }
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes blink-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease both;
@@ -169,6 +210,9 @@ body {
 }
 .animate-ping-slow {
   animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.animate-blink-dot {
+  animation: blink-dot 1.6s ease-in-out infinite;
 }
 
 .delay-100 {
@@ -194,6 +238,27 @@ body {
 }
 .delay-700 {
   animation-delay: 0.7s;
+}
+
+/* ─── SOS strobe (web substitute for flashlight) ────────── */
+@keyframes sos-strobe {
+  0%,
+  49% {
+    background: #b91c1c;
+  }
+  50%,
+  100% {
+    background: #7f1d1d;
+  }
+}
+.sos-strobe {
+  animation: sos-strobe 0.6s steps(1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sos-strobe {
+    animation: none;
+    background: #b91c1c;
+  }
 }
 
 /* ─── Glass ─────────────────────────────────────────────── */
@@ -316,4 +381,200 @@ body {
   box-shadow:
     0 40px 80px rgba(15, 23, 42, 0.18),
     0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Landing page — editorial civic-infrastructure system
+   ═══════════════════════════════════════════════════════════ */
+
+.landing-root {
+  background: #ffffff;
+  color: #0f172a;
+  font-family: var(--font-sans);
+}
+
+/* Film grain overlay — breaks digital flatness */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Hairline rules used across the page */
+.rule {
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+/* Display type */
+.display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Eyebrow / index labels */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+/* Outlined ghost type */
+.ghost-text {
+  -webkit-text-stroke: 1.5px rgba(15, 23, 42, 0.18);
+  color: transparent;
+}
+
+/* Ticker */
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 36s linear infinite;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+}
+
+/* Underline sweep for nav / text links */
+.link-sweep {
+  position: relative;
+}
+.link-sweep::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 1.5px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-sweep:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Feature row hover */
+.feature-row {
+  transition: background 0.25s ease;
+}
+.feature-row:hover {
+  background: rgba(37, 99, 235, 0.04);
+}
+.feature-row:hover .feature-index {
+  color: #2563eb;
+}
+.feature-row .feature-arrow {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.feature-row:hover .feature-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Primary button — ink block with signal sweep */
+.btn-ink {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease;
+}
+.btn-ink::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #2563eb;
+  transform: translateY(101%);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.btn-ink:hover::before {
+  transform: translateY(0);
+}
+.btn-ink:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.35);
+}
+.btn-ink:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Secondary button */
+.btn-ghost {
+  transition:
+    background 0.2s ease,
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.btn-ghost:hover {
+  background: rgba(15, 23, 42, 0.05);
+  transform: translateY(-2px);
+}
+.btn-ghost:active {
+  transform: scale(0.98);
+}
+
+/* Focus visibility — a11y requirement */
+.landing-root a:focus-visible,
+.landing-root button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Phone mockup — editorial re-skin */
+.phone-editorial {
+  box-shadow:
+    0 1px 0 rgba(15, 23, 42, 0.06),
+    0 24px 48px -12px rgba(15, 23, 42, 0.28),
+    0 64px 120px -24px rgba(37, 99, 235, 0.18);
+}
+
+/* Marquee divider between hero and content */
+.hero-map-grid {
+  background-image:
+    linear-gradient(rgba(37, 99, 235, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.07) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, black 30%, transparent 75%);
+}
+
+/* Stat block tabular numbers */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Step card number watermark */
+.step-watermark {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.28);
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-ping-slow,
+  .animate-blink-dot {
+    animation: none;
+  }
 }

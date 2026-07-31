@@ -3,6 +3,8 @@ import { useSearchParams, Link } from "react-router-dom";
 import { useIncidentStore, type Incident } from "../../store/useIncidentStore";
 import MapView from "../../components/Map";
 import { LiveBadge } from "../../components/LiveBadge";
+import { SosButton } from "../../components/sos/SosButton";
+import { SafetyTimerButton } from "../../components/sos/SafetyTimer";
 import { useLiveData } from "../../hooks/useLiveData";
 import {
   ShieldAlert,
@@ -47,7 +49,7 @@ const TYPE_CONFIG: Record<
     dot: "bg-blue-600",
     hex: "#10b981",
   },
-  Flood: {
+  "Natural Disaster": {
     bg: "bg-cyan-500/15",
     text: "text-cyan-400",
     dot: "bg-cyan-500",
@@ -458,7 +460,7 @@ export default function CitizenHome() {
       {/* ── Content ─────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-hidden relative">
         {activeTab === "map" ? (
-          <div className="h-full w-full relative">
+          <div key="map" className="h-full w-full relative animate-fade-in">
             <MapView
               center={mapCenter}
               zoom={13}
@@ -467,7 +469,7 @@ export default function CitizenHome() {
             />
 
             {/* Stat overlays — top right */}
-            <div className="absolute top-3 right-3 flex flex-col gap-2 z-[400] pointer-events-none">
+            <div className="absolute top-3 right-3 flex flex-col gap-2 z-[400] pointer-events-none animate-fade-in-scale">
               <div className="bg-slate-100 backdrop-blur-md border border-slate-200 rounded-2xl px-3.5 py-2.5 text-right pointer-events-auto shadow-lg">
                 <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">
                   ACTIVE
@@ -485,6 +487,10 @@ export default function CitizenHome() {
                 </p>
               </div>
             </div>
+
+            {/* SOS — personal emergency (bottom-left, opposite Report) */}
+            <SosButton />
+            <SafetyTimerButton />
 
             {/* Report button — floating round FAB on top of the map */}
             <Link
@@ -522,7 +528,7 @@ export default function CitizenHome() {
           </div>
         ) : (
           // Feed tab — scrollable list
-          <div className="h-full overflow-y-auto p-4 space-y-3 pb-28">
+          <div key="feed" className="h-full overflow-y-auto p-4 space-y-3 pb-28 animate-fade-in">
             {activeIncidents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-slate-500 animate-fade-in gap-3">
                 <ShieldAlert className="w-12 h-12 opacity-15" />
@@ -542,7 +548,7 @@ export default function CitizenHome() {
                   <button
                     key={incident.id}
                     onClick={() => setSelectedIncident(incident)}
-                    className="w-full text-left relative bg-slate-100 backdrop-blur-xl border border-slate-200 rounded-[24px] p-5 space-y-3.5 animate-slide-up hover:border-slate-200 hover:bg-slate-100 transition-all active:scale-[0.98] overflow-hidden shadow-xl group"
+                    className="w-full text-left relative bg-slate-100 backdrop-blur-xl border border-slate-200 rounded-[24px] p-5 space-y-3.5 animate-slide-up hover:border-blue-600/30 hover:bg-white hover:-translate-y-0.5 hover:shadow-2xl transition-all duration-300 active:scale-[0.98] overflow-hidden shadow-xl group"
                     style={{ animationDelay: `${idx * 0.05}s` }}
                   >
                     {/* Background ambient glow based on severity */}

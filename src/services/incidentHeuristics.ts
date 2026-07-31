@@ -6,17 +6,40 @@
 import type { LiveIncident } from "./liveIncidents";
 
 // ── Type detection via keywords ────────────────────────────────────────────────
+// Keywords are deliberately narrow: bare words like "overturn", "rain",
+// "vehicle" or "surge" match court rulings, weather chat and price stories.
 const TYPE_RULES: [RegExp, LiveIncident["type"]][] = [
   [/fire|blaze|inferno|burnt|arson|torched|explosion/i, "Fire"],
-  [/accident|crash|collision|overturn|tanker|truck|vehicle|gridlock/i, "Accident"],
-  [/rob|kidnap|cult|gang|shoot|gun|attack|murder|kill|stab|arrest/i, "Crime"],
-  [/flood|waterlog|surge|drown|rain|overflow|erosion/i, "Flood"],
-  [/dead|death|casualt|injur|hospital|medical|emerg|ambulance|outbreak/i, "Medical"],
+  [
+    /\baccident\b|crash|collision|collide|hit.?and.?run|tanker|gridlock|(?:truck|bus|lorry|trailer|vehicle)\s+(?:overturn|plunge|ram|somersault)|overturn(?:ed|s)?\s+(?:truck|tanker|bus|lorry|trailer|vehicle)/i,
+    "Accident",
+  ],
+  [/rob|kidnap|abduct|cult|gang|shoot|gunmen|gunshot|\bgun\b|attack|murder|kill|stab|assassin|arrest/i, "Crime"],
+  [
+    /flood|waterlog|storm surge|tidal surge|drown|torrential|downpour|rainstorm|heavy rain|overflow|erosion|earthquake|quake|landslide|\bstorm\b|windstorm|tornado|cyclone/i,
+    "Natural Disaster",
+  ],
+  [/dead|death|casualt|injur|hospital|medical|emergency|ambulance|outbreak|epidemic|cholera/i, "Medical"],
 ];
 
 export function detectType(text: string): LiveIncident["type"] {
   for (const [re, t] of TYPE_RULES) if (re.test(text)) return t;
   return "Other";
+}
+
+// Hard evidence that something physically happened — used to rescue genuine
+// incident stories that also mention courts/politics ("robbery suspects in court").
+const STRONG_SIGNAL =
+  /\b(kill(?:ed|s|ing)?|dead|death|die[ds]?|injur\w*|wound(?:ed|s)?|victim|crash|collid\w*|collision|raze[ds]?|inferno|blaze|explos\w*|explod\w*|gunmen|gunshot|shoot(?:ing|out)?|kidnap\w*|abduct\w*|robbery|robbers|arson|flood(?:ed|ing|s)?|collaps\w*|spill|drown\w*|rescue[ds]?|evacuat\w*|derail\w*|capsiz\w*|stampede|outbreak|epidemic|cholera)\b/i;
+
+// Coverage that keyword matching mistakes for incidents: politics, courts,
+// sports, business, ceremonies ("court overturns...", "attack on policy...").
+const NOISE =
+  /\b(election\w*|electoral|politic\w*|democracy|party|apc|pdp|inec|senat\w*|assembly|lawmaker|minister|governor(?:ship)?|commissioner|campaign|2027|tribunal|court|suit|lawsuit|litigation|judg(?:e?ment)|verdict|appeal|acquit\w*|impeach\w*|budget|economy|investment|revenue|football|league|match|tournament|award\w*|celebrat\w*|anniversary|appoint\w*|inaugurat\w*|swear(?:ing)?.?in|summit|conference|workshop|empower\w*)\b/i;
+
+/** True when a story reads like politics/courts/sports — not a live incident. */
+export function isNoise(text: string): boolean {
+  return NOISE.test(text) && !STRONG_SIGNAL.test(text);
 }
 
 // ── Severity from keyword density ─────────────────────────────────────────────

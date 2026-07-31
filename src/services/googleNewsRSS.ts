@@ -13,6 +13,7 @@ import { proxyFetchText } from "./proxy";
 import {
   detectSeverity,
   detectType,
+  isNoise,
   isPortHarcourtRelevant,
   isRecent,
   resolveLocation,
@@ -72,7 +73,7 @@ async function fetchRssFeed(query: string): Promise<RssItem[]> {
 
 function rssItemToIncident(item: RssItem, index: number): LiveIncident | null {
   const fullText = `${item.title} ${stripHtml(item.description)}`;
-  if (!isPortHarcourtRelevant(fullText)) return null;
+  if (!isPortHarcourtRelevant(fullText) || isNoise(fullText)) return null;
 
   const type = detectType(fullText);
   const severity = detectSeverity(fullText);

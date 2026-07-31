@@ -14,6 +14,7 @@ import { proxyFetchText } from "./proxy";
 import {
   detectSeverity,
   detectType,
+  isNoise,
   isPortHarcourtRelevant,
   isRecent,
   resolveLocation,
@@ -58,7 +59,7 @@ function parseListing(raw: string): RedditPost[] {
 
 function postToIncident(post: RedditPost, index: number): LiveIncident | null {
   const text = `${post.title ?? ""} ${(post.selftext ?? "").slice(0, 400)}`;
-  if (!isPortHarcourtRelevant(text)) return null;
+  if (!isPortHarcourtRelevant(text) || isNoise(text)) return null;
 
   const type = detectType(text);
   // Reddit carries lots of general discussion — require a concrete safety type.

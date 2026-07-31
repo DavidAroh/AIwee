@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useIncidentStore } from '../store/useIncidentStore';
 import { fetchLivePortHarcourtIncidents } from '../services/liveIncidents';
+import { isBackendEnabled } from '../lib/supabase';
 
 const POLL_INTERVAL_MS = 15 * 60_000; // 15 minutes — respects Gemini free-tier quota
 
@@ -36,6 +37,12 @@ export function useLiveData() {
   });
 
   const doFetch = useCallback(async (force = false) => {
+    // When a backend is configured, incidents arrive via Supabase Realtime
+    // (useBackendSync) — skip the client-side collector entirely.
+    if (isBackendEnabled()) {
+      setStatus((prev) => ({ ...prev, state: 'success', lastUpdated: new Date() }));
+      return;
+    }
     setStatus((prev) => ({ ...prev, state: 'fetching', error: null, newCount: 0 }));
 
     try {

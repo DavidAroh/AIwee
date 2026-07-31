@@ -22,7 +22,7 @@ const QUICK_TYPES = [
   { label: "🚗 Accident", value: "Accident" },
   { label: "🚨 Crime", value: "Crime" },
   { label: "🏥 Medical", value: "Medical" },
-  { label: "🌊 Flood", value: "Flood" },
+  { label: "🌪️ Natural Disaster", value: "Natural Disaster" },
   { label: "❓ Other", value: "Other" },
 ];
 
@@ -31,7 +31,7 @@ const TYPE_COLORS: Record<string, string> = {
   Accident: "#f59e0b",
   Crime: "#ec4899",
   Medical: "#10b981",
-  Flood: "#06b6d4",
+  "Natural Disaster": "#06b6d4",
   Other: "#8b5cf6",
 };
 

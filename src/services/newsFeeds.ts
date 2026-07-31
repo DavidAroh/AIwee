@@ -13,6 +13,7 @@ import { proxyFetchText } from "./proxy";
 import {
   detectSeverity,
   detectType,
+  isNoise,
   isPortHarcourtRelevant,
   isRecent,
   resolveLocation,
@@ -63,7 +64,7 @@ function parseFeed(xml: string, outlet: string): FeedItem[] {
 
 function itemToIncident(item: FeedItem, index: number): LiveIncident | null {
   const fullText = `${item.title} ${stripHtml(item.description)}`;
-  if (!isPortHarcourtRelevant(fullText)) return null;
+  if (!isPortHarcourtRelevant(fullText) || isNoise(fullText)) return null;
 
   const type = detectType(fullText);
   // National feeds carry politics/sport too — only keep texts that classified

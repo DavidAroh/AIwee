@@ -13,6 +13,7 @@ import { proxyFetchText } from "./proxy";
 import {
   detectSeverity,
   detectType,
+  isNoise,
   isPortHarcourtRelevant,
   isRecent,
   resolveLocation,
@@ -75,7 +76,7 @@ export async function fetchGdeltIncidents(): Promise<LiveIncident[]> {
     const title = String(a.title ?? "").trim();
     if (!title) continue;
     if (a.language && a.language !== "English") continue;
-    if (!isPortHarcourtRelevant(title)) continue;
+    if (!isPortHarcourtRelevant(title) || isNoise(title)) continue;
 
     const key = title.toLowerCase().replace(/\s+/g, " ").slice(0, 60);
     if (seen.has(key)) continue;

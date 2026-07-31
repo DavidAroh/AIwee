@@ -1,0 +1,30 @@
+project_id = "aiwee"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+# Collection + report run without a user JWT (public/anon callable).
+[functions.collect]
+verify_jwt = false
+
+[functions.report]
+verify_jwt = false

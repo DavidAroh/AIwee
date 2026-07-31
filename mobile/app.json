@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "AiWee",
+    "slug": "aiwee",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "aiwee",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#2563eb"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "AiWee uses your location to attach it to incident reports and to broadcast your position during an SOS emergency.",
+        "UIBackgroundModes": [
+          "audio",
+          "location"
+        ]
+      }
+    },
+    "android": {
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "AiWee uses your location for incident reports and SOS emergencies."
+        }
+      ],
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}

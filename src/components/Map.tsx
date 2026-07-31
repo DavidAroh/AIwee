@@ -10,10 +10,11 @@
  *  • MapControls stable (no recreated closures causing flicker)
  */
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useIncidentStore } from '../store/useIncidentStore';
+import { useEmergencyStore, LEVEL_META } from '../store/useEmergencyStore';
 import { formatDistanceToNow } from 'date-fns';
 
 // ── Fix Leaflet default icon path ────────────────────────────────────────────
@@ -76,7 +77,7 @@ const TYPE_COLORS: Record<string, { primary: string; glow: string }> = {
   Fire:     { primary: '#ef4444', glow: 'rgba(239,68,68,0.5)'  },
   Crime:    { primary: '#ec4899', glow: 'rgba(236,72,153,0.5)' },
   Medical:  { primary: '#10b981', glow: 'rgba(16,185,129,0.5)' },
-  Flood:    { primary: '#06b6d4', glow: 'rgba(6,182,212,0.5)'  },
+  "Natural Disaster":    { primary: '#06b6d4', glow: 'rgba(6,182,212,0.5)'  },
   Other:    { primary: '#8b5cf6', glow: 'rgba(139,92,246,0.5)' },
 };
 
@@ -178,6 +179,75 @@ const USER_ICON = new L.DivIcon({
   iconSize:   [28, 28],
   iconAnchor: [14, 14],
 });
+
+// ── SOS emergency icon ────────────────────────────────────────────────────────
+const SOS_ICON = new L.DivIcon({
+  className: '',
+  html: `
+    <div style="position:relative;width:64px;height:64px;">
+      <div style="
+        position:absolute;top:20px;left:20px;width:24px;height:24px;border-radius:50%;
+        background:rgba(220,38,38,0.55);animation:aiwee-ping 0.9s ease-out infinite;
+      "></div>
+      <div style="
+        position:absolute;top:20px;left:20px;width:24px;height:24px;border-radius:50%;
+        background:#dc2626;border:3px solid #fff;
+        box-shadow:0 0 16px rgba(220,38,38,0.8),0 2px 8px rgba(0,0,0,0.5);
+        display:flex;align-items:center;justify-content:center;z-index:5;
+      "></div>
+      <div style="
+        position:absolute;top:0;left:50%;transform:translateX(-50%);
+        background:#dc2626;color:#fff;font:900 9px/1 Inter,sans-serif;
+        letter-spacing:.1em;padding:3px 7px;border-radius:4px;white-space:nowrap;
+        box-shadow:0 1px 4px rgba(0,0,0,0.5);z-index:10;
+      ">SOS</div>
+    </div>`,
+  iconSize:   [64, 64],
+  iconAnchor: [32, 32],
+  popupAnchor:[0, -22],
+});
+
+// ── SOS markers + live trails ─────────────────────────────────────────────────
+function EmergencyMarkers() {
+  const emergencies = useEmergencyStore((s) => s.emergencies);
+  const active = emergencies.filter((e) => e.status === 'ACTIVE' && e.track.length > 0);
+
+  return (
+    <>
+      {active.map((e) => {
+        const last = e.track[e.track.length - 1];
+        const meta = LEVEL_META[e.level];
+        return (
+          <span key={e.id}>
+            {e.track.length > 1 && (
+              <Polyline
+                positions={e.track.map((p) => [p.lat, p.lng] as [number, number])}
+                pathOptions={{ color: '#dc2626', weight: 3, opacity: 0.7, dashArray: '6 6' }}
+              />
+            )}
+            <Marker position={[last.lat, last.lng]} icon={SOS_ICON} zIndexOffset={5000}>
+              <Popup className="aiwee-popup" maxWidth={220}>
+                <div style={{ padding: '11px 13px', fontFamily: 'Inter,sans-serif' }}>
+                  <p style={{ fontWeight: 900, color: '#dc2626', fontSize: 12, margin: '0 0 4px' }}>
+                    {meta.emoji} SOS — {meta.label}
+                  </p>
+                  <p style={{ color: '#475569', fontSize: 10.5, margin: '0 0 6px', lineHeight: 1.5 }}>
+                    Someone here needs immediate help. Started{' '}
+                    {formatDistanceToNow(new Date(e.startedAt), { addSuffix: true })}.
+                  </p>
+                  <p style={{ color: '#94a3b8', fontSize: 9.5, margin: 0, fontFamily: 'JetBrains Mono,monospace' }}>
+                    {last.lat.toFixed(5)}, {last.lng.toFixed(5)}
+                    {typeof last.speed === 'number' && last.speed !== null ? ` · ${(last.speed * 3.6).toFixed(0)} km/h` : ''}
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+          </span>
+        );
+      })}
+    </>
+  );
+}
 
 // ── Stable center-sync (compares values, no flyTo animation) ─────────────────
 function CenterSync({ center }: { center: [number, number] }) {
@@ -377,6 +447,9 @@ export default function MapView({
 
         {/* Incident markers */}
         <IncidentMarkers active={active} />
+
+        {/* Active SOS emergencies — markers + live trails */}
+        <EmergencyMarkers />
       </MapContainer>
     </div>
   );

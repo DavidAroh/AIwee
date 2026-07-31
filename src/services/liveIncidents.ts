@@ -20,7 +20,7 @@ const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 // ── Types ──────────────────────────────────────────────────────────────────────
 export interface LiveIncident {
   id: string;
-  type: 'Fire' | 'Accident' | 'Crime' | 'Medical' | 'Flood' | 'Other';
+  type: 'Fire' | 'Accident' | 'Crime' | 'Medical' | 'Natural Disaster' | 'Other';
   description: string;
   locationName: string;
   latitude: number;
@@ -166,7 +166,7 @@ const PH_FALLBACK: Omit<LiveIncident, 'id' | 'timestamp' | 'source'>[] = [
     confidenceScore: 74,
   },
   {
-    type: 'Flood',
+    type: 'Natural Disaster',
     description: 'Flash flooding at Rumuigbo junction — water level over 40 cm, road completely impassable.',
     locationName: 'Rumuigbo Junction',
     latitude: 4.8296, longitude: 6.9899,
@@ -196,7 +196,7 @@ const PH_FALLBACK: Omit<LiveIncident, 'id' | 'timestamp' | 'source'>[] = [
     confidenceScore: 65,
   },
   {
-    type: 'Flood',
+    type: 'Natural Disaster',
     description: 'Tidal surge affecting Eagle Island waterfront — road submerged, households at risk.',
     locationName: 'Eagle Island',
     latitude: 4.7800, longitude: 6.9900,
@@ -229,7 +229,7 @@ const INCIDENT_SCHEMA = {
         properties: {
           type: {
             type: Type.STRING,
-            description: 'One of: Fire, Accident, Crime, Medical, Flood, Other',
+            description: 'One of: Fire, Accident, Crime, Medical, Natural Disaster, Other',
           },
           description: {
             type: Type.STRING,
@@ -411,7 +411,7 @@ STRICT RULES:
         const [lat, lng] = resolveCoords(item.locationName ?? 'Port Harcourt');
         return {
           id:              `live-gemini-${Date.now()}-${i}`,
-          type:            (['Fire','Accident','Crime','Medical','Flood','Other'].includes(item.type) ? item.type : 'Other') as LiveIncident['type'],
+          type:            (['Fire','Accident','Crime','Medical','Natural Disaster','Other'].includes(item.type) ? item.type : 'Other') as LiveIncident['type'],
           description:     String(item.description ?? ''),
           locationName:    String(item.locationName ?? 'Port Harcourt'),
           latitude:        clampLat(lat),

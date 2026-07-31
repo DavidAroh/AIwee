@@ -6,14 +6,17 @@
  */
 import { useState, useEffect } from 'react';
 import { useIncidentStore, type Incident } from '../../store/useIncidentStore';
+import { useEmergencyStore } from '../../store/useEmergencyStore';
+import { EmergencyOps } from './EmergencyOps';
 import { useLiveData } from '../../hooks/useLiveData';
+import { useBackendSync } from '../../hooks/useBackendSync';
 import { LiveBadge } from '../../components/LiveBadge';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '../../lib/utils';
 import MapView from '../../components/Map';
 import {
   X, Send, CheckCircle2, CheckSquare,
-  Star, GitBranch, Archive, Shuffle,
+  Star, GitBranch, Archive, Shuffle, Siren,
 } from 'lucide-react';
 
 // ── Incident type palette ──────────────────────────────────────────────────────
@@ -22,7 +25,7 @@ const TYPE_CFG: Record<string, { hex: string; bg: string; label: string }> = {
   Accident: { hex: '#f59e0b', bg: 'bg-amber-500/15 text-amber-400 border-amber-500/30', label: 'Accident' },
   Crime:    { hex: '#ec4899', bg: 'bg-pink-500/15 text-pink-400 border-pink-500/30',   label: 'Crime'    },
   Medical:  { hex: '#2563eb', bg: 'bg-blue-600/15 text-blue-500 border-blue-600/30', label: 'Medical' },
-  Flood:    { hex: '#06b6d4', bg: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',   label: 'Flood'    },
+  "Natural Disaster":    { hex: '#06b6d4', bg: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',   label: 'Natural Disaster'    },
   Other:    { hex: '#8b5cf6', bg: 'bg-violet-500/15 text-violet-400 border-violet-500/30', label: 'Other' },
 };
 
@@ -364,7 +367,7 @@ function IntelFeed({
 const SIM_POOL = [
   { type: 'Accident' as const, desc: 'Multi-vehicle collision at Trans-Amadi roundabout — two lanes blocked.', lat: 4.830, lng: 7.030, sev: 8, conf: 72, cues: ['Trans-Amadi', 'collision', 'traffic blocked', 'injuries reported'] },
   { type: 'Fire'     as const, desc: 'Market stall fire at Mile 1 — spreading to adjacent stalls.',           lat: 4.800, lng: 6.975, sev: 9, conf: 84, cues: ['Mile 1 Market', 'flames', 'market', 'evacuation'] },
-  { type: 'Flood'    as const, desc: 'Flash flooding at D-Line after heavy rainfall — road impassable.',      lat: 4.820, lng: 7.015, sev: 6, conf: 90, cues: ['D-Line', 'flooding', 'waterlogged', 'drainage'] },
+  { type: 'Natural Disaster'    as const, desc: 'Flash flooding at D-Line after heavy rainfall — road impassable.',      lat: 4.820, lng: 7.015, sev: 6, conf: 90, cues: ['D-Line', 'flooding', 'waterlogged', 'drainage'] },
   { type: 'Crime'    as const, desc: 'Armed robbery at ATM on Rumuola Road — suspect fled on motorcycle.',     lat: 4.815, lng: 7.043, sev: 8, conf: 65, cues: ['Rumuola Road', 'armed robbery', 'motorcycle', 'ATM'] },
   { type: 'Medical'  as const, desc: 'Pedestrian struck by vehicle at Eleme Junction — unconscious.',         lat: 4.773, lng: 7.091, sev: 10, conf: 81, cues: ['Eleme Junction', 'pedestrian hit', 'unconscious', 'ambulance'] },
   { type: 'Other'    as const, desc: 'Gas pipeline leak in Woji residential area — strong odour reported.',    lat: 4.839, lng: 7.025, sev: 7, conf: 76, cues: ['Woji', 'gas leak', 'pipeline', 'residential'] },
@@ -397,6 +400,7 @@ export default function Dashboard() {
   };
 
   const { status: liveStatus, refresh } = useLiveData();
+  useBackendSync(); // live incidents + SOS from Supabase (no-op when disabled)
 
   // Clock
   useEffect(() => {
@@ -493,6 +497,15 @@ export default function Dashboard() {
             {format(currentTime, 'HH:mm:ss')} WAT
           </div>
           <div className="h-4 w-px bg-[#e2e8f0]" />
+          {/* Simulate SOS (demo) */}
+          <button
+            onClick={() => useEmergencyStore.getState().simulateEmergency()}
+            title="Spawn a simulated personal SOS emergency"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold border uppercase tracking-wider bg-red-50 text-red-600 border-red-200 hover:bg-red-100 transition-all"
+          >
+            <Siren className="w-3 h-3" />
+            Sim SOS
+          </button>
           {/* Simulate button */}
           <button
             onClick={simulateIncident}
@@ -611,6 +624,9 @@ export default function Dashboard() {
             zoom={13}
             height="100%"
           />
+
+          {/* Active personal SOS emergencies */}
+          <EmergencyOps />
 
           {/* Severity overlay — top right */}
           <div className="absolute top-3 right-3 z-[400] flex gap-2">

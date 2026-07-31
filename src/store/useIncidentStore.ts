@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export type IncidentStatus = 'UNVERIFIED' | 'VERIFIED' | 'CLOSED';
-export type IncidentType = 'Accident' | 'Fire' | 'Crime' | 'Medical' | 'Flood' | 'Other';
+export type IncidentType = 'Accident' | 'Fire' | 'Crime' | 'Medical' | 'Natural Disaster' | 'Other';
 
 export interface Incident {
   id: string;
@@ -60,6 +60,8 @@ interface IncidentStore {
   dismissedAlerts: string[];
   // Actions
   addIncident: (incident: Omit<Incident, 'id' | 'timestamp' | 'status' | 'reportersCount'> & { _id?: string }) => void;
+  /** Insert or replace a fully-formed incident (used by the Supabase backend sync). */
+  upsertIncident: (incident: Incident) => void;
   updateIncident: (id: string, updates: Partial<Incident>) => void;
   confirmIncident: (incidentId: string, confirmed: boolean) => void;
   verifyIncident: (id: string) => void;
@@ -89,7 +91,7 @@ function buildVerifyAlert(incident: Incident): Alert {
 function buildGeoFenceAlert(incident: Incident): Alert {
   const isUrgent = incident.severityScore >= 8;
   const typeEmoji: Record<string, string> = {
-    Fire: '🔥', Accident: '🚗', Crime: '🚨', Medical: '🚑', Flood: '🌊', Other: '⚠️',
+    Fire: '🔥', Accident: '🚗', Crime: '🚨', Medical: '🚑', "Natural Disaster": '🌪️', Other: '⚠️',
   };
   const emoji = typeEmoji[incident.type] ?? '⚠️';
   return {
@@ -142,6 +144,17 @@ export const useIncidentStore = create<IncidentStore>((set) => ({
       alerts: [verifyAlert, ...state.alerts],
       sessionReports: newReports,
     };
+  }),
+
+  upsertIncident: (incident) => set((state) => {
+    const idx = state.incidents.findIndex((i) => i.id === incident.id);
+    if (idx === -1) {
+      return { incidents: [incident, ...state.incidents] };
+    }
+    const next = state.incidents.slice();
+    // Preserve any locally-computed status history while taking backend truth.
+    next[idx] = { ...next[idx], ...incident, statusHistory: next[idx].statusHistory };
+    return { incidents: next };
   }),
 
   updateIncident: (id, updates) => set((state) => ({
